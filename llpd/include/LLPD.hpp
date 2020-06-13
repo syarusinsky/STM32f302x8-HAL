@@ -194,8 +194,9 @@ class LLPD
 
 		// GPIO
 		static void gpio_enable_clock (const GPIO_PORT& port);
-		static void gpio_input_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const GPIO_PUPD& pupd,
+		static void gpio_digital_input_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const GPIO_PUPD& pupd,
 						bool alternateFunc = false);
+		static void gpio_analog_setup (const GPIO_PORT& port, const GPIO_PIN& pin);
 		static void gpio_output_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const GPIO_PUPD& pupd,
 						const GPIO_OUTPUT_TYPE& type, const GPIO_OUTPUT_SPEED& speed,
 						bool alternateFunc = false);

@@ -278,7 +278,7 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi2 miso
-		gpio_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_14, GPIO_PUPD::PULL_DOWN, true );
+		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_14, GPIO_PUPD::PULL_DOWN, true );
 
 		// spi2 mosi
 		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_15, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
@@ -306,7 +306,7 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi3 miso
-		gpio_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_4, GPIO_PUPD::PULL_DOWN, true );
+		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_4, GPIO_PUPD::PULL_DOWN, true );
 
 		// spi3 mosi
 		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_5, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,

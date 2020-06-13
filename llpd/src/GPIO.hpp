@@ -52,7 +52,7 @@ void LLPD::gpio_enable_clock (const GPIO_PORT& port)
 	RCC->AHBENR |= portClockVal;
 }
 
-void LLPD::gpio_input_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const GPIO_PUPD& pupd, bool alternateFunc)
+void LLPD::gpio_digital_input_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const GPIO_PUPD& pupd, bool alternateFunc)
 {
 	GPIO_TypeDef* portPtr = PortToPortPtr( port );
 
@@ -206,6 +206,103 @@ void LLPD::gpio_input_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const G
 		portPtr->PUPDR &= ~(pupdBit0);
 		portPtr->PUPDR |= pupdBit1;
 	}
+}
+
+void LLPD::gpio_analog_setup (const GPIO_PORT& port, const GPIO_PIN& pin)
+{
+	GPIO_TypeDef* portPtr = PortToPortPtr( port );
+
+	uint32_t modeBit0;
+	uint32_t modeBit1;
+
+	if ( pin == GPIO_PIN::PIN_0 )
+	{
+		modeBit0 = GPIO_MODER_MODER0_0;
+		modeBit1 = GPIO_MODER_MODER0_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_1 )
+	{
+		modeBit0 = GPIO_MODER_MODER1_0;
+		modeBit1 = GPIO_MODER_MODER1_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_2 )
+	{
+		modeBit0 = GPIO_MODER_MODER2_0;
+		modeBit1 = GPIO_MODER_MODER2_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_3 )
+	{
+		modeBit0 = GPIO_MODER_MODER3_0;
+		modeBit1 = GPIO_MODER_MODER3_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_4 )
+	{
+		modeBit0 = GPIO_MODER_MODER4_0;
+		modeBit1 = GPIO_MODER_MODER4_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_5 )
+	{
+		modeBit0 = GPIO_MODER_MODER5_0;
+		modeBit1 = GPIO_MODER_MODER5_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_6 )
+	{
+		modeBit0 = GPIO_MODER_MODER6_0;
+		modeBit1 = GPIO_MODER_MODER6_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_7 )
+	{
+		modeBit0 = GPIO_MODER_MODER7_0;
+		modeBit1 = GPIO_MODER_MODER7_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_8 )
+	{
+		modeBit0 = GPIO_MODER_MODER8_0;
+		modeBit1 = GPIO_MODER_MODER8_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_9 )
+	{
+		modeBit0 = GPIO_MODER_MODER9_0;
+		modeBit1 = GPIO_MODER_MODER9_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_10 )
+	{
+		modeBit0 = GPIO_MODER_MODER10_0;
+		modeBit1 = GPIO_MODER_MODER10_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_11 )
+	{
+		modeBit0 = GPIO_MODER_MODER11_0;
+		modeBit1 = GPIO_MODER_MODER11_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_12 )
+	{
+		modeBit0 = GPIO_MODER_MODER12_0;
+		modeBit1 = GPIO_MODER_MODER12_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_13 )
+	{
+		modeBit0 = GPIO_MODER_MODER13_0;
+		modeBit1 = GPIO_MODER_MODER13_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_14 )
+	{
+		modeBit0 = GPIO_MODER_MODER14_0;
+		modeBit1 = GPIO_MODER_MODER14_1;
+	}
+	else if ( pin == GPIO_PIN::PIN_15 )
+	{
+		modeBit0 = GPIO_MODER_MODER15_0;
+		modeBit1 = GPIO_MODER_MODER15_1;
+	}
+	else
+	{
+		return;
+	}
+
+	// set mode to analog
+	portPtr->MODER |= modeBit0;
+	portPtr->MODER |= modeBit1;
 }
 
 void LLPD::gpio_output_setup (const GPIO_PORT& port, const GPIO_PIN& pin, const GPIO_PUPD& pupd,
