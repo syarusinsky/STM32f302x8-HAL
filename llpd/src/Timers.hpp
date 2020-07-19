@@ -34,7 +34,7 @@ void LLPD::tim6_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInte
 
 void LLPD::tim6_counter_enable_interrupts()
 {
-	NVIC_SetPriority( TIM6_DAC_IRQn, 0x03 );
+	NVIC_SetPriority( TIM6_DAC_IRQn, 0x00 );
 	NVIC_EnableIRQ( TIM6_DAC_IRQn );
 
 	TIM6->DIER |= TIM_DIER_UIE;

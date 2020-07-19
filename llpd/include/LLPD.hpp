@@ -184,6 +184,39 @@ enum class ADC_CHANNEL
 	CHAN_INVALID
 };
 
+enum class USART_NUM
+{
+	USART_1,
+	USART_2,
+	USART_3
+};
+
+enum class USART_WORD_LENGTH
+{
+	BITS_7,
+	BITS_8,
+	BITS_9
+};
+
+enum class USART_PARITY
+{
+	ODD,
+	EVEN
+};
+
+enum class USART_CONF
+{
+	TX_ONLY,
+	RX_ONLY,   // Recieve interrupt will be enabled
+	TX_AND_RX  // Recieve interrupt will be enabled
+};
+
+enum class USART_STOP_BITS
+{
+	BITS_1,
+	BITS_2
+};
+
 class LLPD
 {
 	public:
@@ -230,7 +263,7 @@ class LLPD
 		static void i2c_master_write (const I2C_NUM& i2cNum, bool setStopCondition, uint8_t numBytes, uint8_t bytes...);
 		static void i2c_master_read (const I2C_NUM& i2cNum, bool setStopCondition, uint8_t numBytes, uint8_t* bytes...);
 
-		// DAC
+		// DAC dac1( vout = a4 )
 		static void dac_init (bool useVoltageBuffer);
 		static void dac_send (uint16_t data);
 
@@ -241,6 +274,15 @@ class LLPD
 		static void adc_perform_conversion_sequence();
 		static uint16_t adc_get_channel_value (const ADC_CHANNEL& channel); // 65535 is an invalid value for debugging
 		static uint16_t adc_test();
+
+		// USART usart1( tx = b6, rx = b7 )
+		//       usart2( tx = b3, rx = b4 )
+		//       usart3( tx = b9, rx = b8 )
+		static void usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordLen, const USART_PARITY& parity,
+					const USART_CONF& conf, const USART_STOP_BITS& stopBits, const unsigned int sysClockFreq,
+					const unsigned int baudRate);
+		static void usart_transmit (const USART_NUM& usartNum, uint16_t data);
+		static uint16_t usart_receive (const USART_NUM& usartNum);
 };
 
 #endif // LLPD_H

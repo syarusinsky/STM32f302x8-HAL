@@ -5,3 +5,4 @@
 #include "I2C.hpp"
 #include "DAC.hpp"
 #include "ADC.hpp"
+#include "USART.hpp"
