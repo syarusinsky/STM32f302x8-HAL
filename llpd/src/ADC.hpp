@@ -1,6 +1,10 @@
-#include "../include/LLPD.hpp"
+#include "LLPD.hpp"
 
-#include "../../stm32cubef3/include/stm32f302x8.h"
+#if defined( STM32F302X8 )
+#include "stm32f302x8.h"
+#elif defined( STM32F302XC )
+#include "stm32f302xc.h"
+#endif
 
 #include <cstdarg>
 
@@ -224,14 +228,27 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 	while ( (ADC1->CR & ADC_CR_ADCAL) != 0 ) {}
 
 	// set clock mode to use PLL
+#if defined( STM32F302X8 )
 	ADC1_COMMON->CCR &= ~(ADC_CCR_CKMODE);
+#elif defined( STM32F302XC )
+	ADC12_COMMON->CCR &= ~(ADC_CCR_CKMODE);
+#endif
 
 	// set PLL prescaler to 1
+#if defined( STM32F302X8 )
 	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
 	RCC->CFGR2 |= RCC_CFGR2_ADC1PRES_DIV1;
+#elif defined( STM32F302XC )
+	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
+	RCC->CFGR2 |= RCC_CFGR2_ADCPRE12_DIV1;
+#endif
 
 	// enable clock to adc
+#if defined( STM32F302X8 )
 	RCC->AHBENR |= RCC_AHBENR_ADC1EN;
+#elif defined( STM32F302XC )
+	RCC->AHBENR |= RCC_AHBENR_ADC12EN;
+#endif
 
 	// enable adc
 	ADC1->CR |= ADC_CR_ADEN;
@@ -293,11 +310,22 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 			( clkRegVal << (spacing * (18 - offset)) );
 
 	// TODO possibly set vrefen????
+#if defined( STM32F302X8 )
 	ADC1_COMMON->CCR |= ADC_CCR_VREFEN;
+#elif defined( STM32F302XC )
+	ADC12_COMMON->CCR |= ADC_CCR_VREFEN;
+#endif
+
 	// TODO possibly set data alignment?
+
 	// TODO possibly set adc prescaler
+#if defined( STM32F302X8 )
 	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
 	RCC->CFGR2 |= (0b11011 << 4);
+#elif defined( STM32F302XC )
+	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
+	RCC->CFGR2 |= (0b11011 << 4);
+#endif
 }
 
 uint16_t LLPD::adc_test()

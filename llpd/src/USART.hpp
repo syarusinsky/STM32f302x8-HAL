@@ -1,6 +1,10 @@
-#include "../include/LLPD.hpp"
+#include "LLPD.hpp"
 
-#include "../../stm32cubef3/include/stm32f302x8.h"
+#if defined( STM32F302X8 )
+#include "stm32f302x8.h"
+#elif defined( STM32F302XC )
+#include "stm32f302xc.h"
+#endif
 
 // these variables store masks for transmitting data based on word length determined in usart_init (default 8 bits)
 static uint16_t usart1WordLenMask = 0b0000000011111111;
@@ -105,6 +109,7 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 		}
 
 		// set word length
+#if defined( STM32F302X8 )
 		if ( wordLen == USART_WORD_LENGTH::BITS_7 )
 		{
 			usart->CR1 &= ~(USART_CR1_M0);
@@ -123,6 +128,18 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 			usart->CR1 &= ~(USART_CR1_M1);
 			*usartWordLenMask = 0b0000000111111111;
 		}
+#elif defined( STM32F302XC )
+		if ( wordLen == USART_WORD_LENGTH::BITS_8 )
+		{
+			usart->CR1 &= ~(USART_CR1_M0);
+			*usartWordLenMask = 0b0000000011111111;
+		}
+		else if ( wordLen == USART_WORD_LENGTH::BITS_9 )
+		{
+			usart->CR1 |= USART_CR1_M0;
+			*usartWordLenMask = 0b0000000111111111;
+		}
+#endif
 
 		// set parity
 		if ( parity == USART_PARITY::ODD )

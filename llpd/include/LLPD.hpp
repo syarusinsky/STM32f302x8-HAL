@@ -139,8 +139,10 @@ enum class SPI_DATA_SIZE
 enum class I2C_NUM
 {
 	I2C_1,
-	I2C_2,
-	I2C_3
+	I2C_2
+#if defined( STM32F302X8 )
+	, I2C_3
+#endif
 };
 
 enum class I2C_ADDR_MODE
@@ -193,7 +195,9 @@ enum class USART_NUM
 
 enum class USART_WORD_LENGTH
 {
+#if defined( STM32F302X8 )
 	BITS_7,
+#endif
 	BITS_8,
 	BITS_9
 };
@@ -223,7 +227,7 @@ class LLPD
 		// SYSTEM CLOCK (pll setup is not currently working, need to debug why in the future, may just need VDDA and VSSA)
 		// when using PLL as system clock, you should call rcc_pll_setup first
 		static void rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemClock);
-		static void rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, bool pllDivideBy2, const RCC_PLL_MULTIPLY& pllMultiply);
+		static void rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply);
 
 		// GPIO
 		static void gpio_enable_clock (const GPIO_PORT& port);

@@ -1,6 +1,10 @@
 #include "LLPD.hpp"
 
+#if defined( STM32F302X8 )
 #include "stm32f302x8.h"
+#elif defined( STM32F302XC )
+#include "stm32f302xc.h"
+#endif
 
 #include <cstdarg>
 
@@ -52,6 +56,7 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_9, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::OPEN_DRAIN,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 	}
+#if defined( STM32F302X8 )
 	else if ( i2cNum == I2C_NUM::I2C_3 )
 	{
 		rccI2CEnableBits = RCC_APB1ENR_I2C3EN;
@@ -70,6 +75,7 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_8, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::OPEN_DRAIN,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 	}
+#endif
 
 	// enable i2c peripheral clock
 	RCC->APB1ENR |= rccI2CEnableBits;
@@ -95,9 +101,11 @@ void LLPD::i2c_master_set_slave_address (const I2C_NUM& i2cNum, const I2C_ADDR_M
 				I2C2->CR2 &= (0b11111111111111111111110000000000);
 				I2C2->CR2 |= (address << 1);
 				break;
+#if defined( STM32F302X8 )
 			case I2C_NUM::I2C_3:
 				I2C3->CR2 &= (0b11111111111111111111110000000000);
 				I2C3->CR2 |= (address << 1);
+#endif
 		}
 	}
 	else if ( addrMode == I2C_ADDR_MODE::BITS_10 )
@@ -116,9 +124,11 @@ void LLPD::i2c_master_set_slave_address (const I2C_NUM& i2cNum, const I2C_ADDR_M
 				I2C2->CR2 &= (0b11111111111111111111110000000000);
 				I2C2->CR2 |= address;
 				break;
+#if defined( STM32F302X8 )
 			case I2C_NUM::I2C_3:
 				I2C3->CR2 &= (0b11111111111111111111110000000000);
 				I2C3->CR2 |= address;
+#endif
 		}
 	}
 }
@@ -136,10 +146,12 @@ void LLPD::i2c_master_write (const I2C_NUM& i2cNum, bool setStopCondition, uint8
 	{
 		i2cPtr = I2C2;
 	}
+#if defined( STM32F302X8 )
 	else if ( i2cNum == I2C_NUM::I2C_3 )
 	{
 		i2cPtr = I2C3;
 	}
+#endif
 
 	// set write flag
 	i2cPtr->CR2 &= ~(I2C_CR2_RD_WRN);
@@ -217,10 +229,12 @@ void LLPD::i2c_master_read (const I2C_NUM& i2cNum, bool setStopCondition, uint8_
 	{
 		i2cPtr = I2C2;
 	}
+#if defined( STM32F302X8 )
 	else if ( i2cNum == I2C_NUM::I2C_3 )
 	{
 		i2cPtr = I2C3;
 	}
+#endif
 
 	// set read flag
 	i2cPtr->CR2 |= I2C_CR2_RD_WRN;

@@ -1,6 +1,10 @@
 #include "LLPD.hpp"
 
+#if defined( STM32F302X8 )
 #include "stm32f302x8.h"
+#elif defined( STM32F302XC )
+#include "stm32f302xc.h"
+#endif
 
 static inline GPIO_TypeDef* PortToPortPtr (const GPIO_PORT& port)
 {

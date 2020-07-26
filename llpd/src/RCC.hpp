@@ -1,6 +1,10 @@
 #include "LLPD.hpp"
 
+#if defined( STM32F302X8 )
 #include "stm32f302x8.h"
+#elif defined( STM32F302XC )
+#include "stm32f302xc.h"
+#endif
 
 void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemClock)
 {
@@ -44,7 +48,7 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemC
 	}
 }
 
-void LLPD::rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, bool pllDivideBy2, const RCC_PLL_MULTIPLY& pllMultiply)
+void LLPD::rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply)
 {
 	// disable pll
 	RCC->CR &= ~(RCC_CR_PLLON);
@@ -59,15 +63,6 @@ void LLPD::rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, bool pllDivideBy2, 
 	else if ( pllSource == RCC_CLOCK_SOURCE::EXTERNAL )
 	{
 		RCC->CFGR |= RCC_CFGR_PLLSRC_HSE_PREDIV;
-	}
-
-	if ( !pllDivideBy2 )
-	{
-		RCC->CFGR |= RCC_CFGR_PLLNODIV;
-	}
-	else
-	{
-		RCC->CFGR &= ~(RCC_CFGR_PLLNODIV);
 	}
 
 	// clear pll multiply

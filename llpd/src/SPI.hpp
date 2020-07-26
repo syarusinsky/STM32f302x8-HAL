@@ -1,6 +1,10 @@
 #include "LLPD.hpp"
 
+#if defined( STM32F302X8 )
 #include "stm32f302x8.h"
+#elif defined( STM32F302XC )
+#include "stm32f302xc.h"
+#endif
 
 static void setup_spi_registers (SPI_TypeDef* spiPtr, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
 				const SPI_CLK_PHASE& phase, const SPI_DUPLEX& duplex, const SPI_FRAME_FORMAT& frameFormat,
