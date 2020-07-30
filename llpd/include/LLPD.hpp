@@ -260,7 +260,7 @@ class LLPD
 
 		// I2C i2c1( sda = b7,  scl = b6 )
 		//     i2c2( sda = a10, scl = a9 )
-		//     i2c3( sda = b5,  scl = a8 )
+		//     i2c3( sda = b5,  scl = a8 ) i2c3 is not available on stm32f302xc
 		//     timingRegVal can be calculated using this tool https://www.st.com/en/embedded-software/stsw-stm32126.html
 		static void i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal);
 		static void i2c_master_set_slave_address (const I2C_NUM& i2cNum, const I2C_ADDR_MODE& addrMode, uint16_t address);
@@ -281,7 +281,7 @@ class LLPD
 
 		// USART usart1( tx = b6, rx = b7 )
 		//       usart2( tx = b3, rx = b4 )
-		//       usart3( tx = b9, rx = b8 )
+		//       usart3( tx = b9, rx = b8 ) for stm32f302x8 OR ( tx = b10, rx = b11 ) for stm32f302xc
 		static void usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordLen, const USART_PARITY& parity,
 					const USART_CONF& conf, const USART_STOP_BITS& stopBits, const unsigned int sysClockFreq,
 					const unsigned int baudRate);

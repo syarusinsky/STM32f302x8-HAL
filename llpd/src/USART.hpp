@@ -69,6 +69,7 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 		usart = USART3;
 		usartWordLenMask = &usart3WordLenMask;
 
+#if defined( STM32F302X8 )
 		// set alternate function registers to af7 for b8 and b9
 		const int afValue = 7;
 		const int afWidth = 4;
@@ -84,6 +85,24 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 		// rx
 		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_8, GPIO_PUPD::NONE, true );
 		gpio_output_set( GPIO_PORT::B, GPIO_PIN::PIN_8, false );
+
+#elif defined( STM32F302XC )
+		// set alternate function registers to af7 for b10 and b11
+		const int afValue = 7;
+		const int afWidth = 4;
+		const int afPin10 = 10 - 8; // minus 8 since we will modify the high register instead of low
+		const int afPin11 = 11 - 8;
+		GPIOB->AFR[1] |= (afValue << (afPin10 * afWidth)) | (afValue << (afPin11 * afWidth));
+
+		// tx
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_10, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+					GPIO_OUTPUT_SPEED::HIGH, true );
+		gpio_output_set( GPIO_PORT::B, GPIO_PIN::PIN_10, false );
+
+		// rx
+		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_11, GPIO_PUPD::NONE, true );
+		gpio_output_set( GPIO_PORT::B, GPIO_PIN::PIN_11, false );
+#endif
 	}
 
 	if ( usart && usartWordLenMask )
