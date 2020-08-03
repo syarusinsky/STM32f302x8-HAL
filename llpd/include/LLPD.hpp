@@ -266,6 +266,7 @@ class LLPD
 		static void i2c_master_set_slave_address (const I2C_NUM& i2cNum, const I2C_ADDR_MODE& addrMode, uint16_t address);
 		static void i2c_master_write (const I2C_NUM& i2cNum, bool setStopCondition, uint8_t numBytes, uint8_t bytes...);
 		static void i2c_master_read (const I2C_NUM& i2cNum, bool setStopCondition, uint8_t numBytes, uint8_t* bytes...);
+		static void i2c_master_read_into_array (const I2C_NUM& i2cNum, bool setStopCondition, uint8_t numBytes, uint8_t* arr);
 
 		// DAC dac1( vout = a4 )
 		static void dac_init (bool useVoltageBuffer);
@@ -287,6 +288,9 @@ class LLPD
 					const unsigned int baudRate);
 		static void usart_transmit (const USART_NUM& usartNum, uint16_t data);
 		static uint16_t usart_receive (const USART_NUM& usartNum);
+		static void usart_log (const USART_NUM& usartNum, const char* cStr); // needs to be proper c string with terminator
+		static void usart_log_int (const USART_NUM& usartNum, const char* cStr, int val);
+		static void usart_log_float (const USART_NUM& usartNum, const char* cStr, float val);
 };
 
 #endif // LLPD_H

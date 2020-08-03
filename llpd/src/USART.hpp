@@ -1,5 +1,7 @@
 #include "LLPD.hpp"
 
+#include <stdlib.h>
+
 #if defined( STM32F302X8 )
 #include "stm32f302x8.h"
 #elif defined( STM32F302XC )
@@ -301,4 +303,70 @@ uint16_t LLPD::usart_receive (const USART_NUM& usartNum)
 	}
 
 	return 0;
+}
+
+void LLPD::usart_log (const USART_NUM& usartNum, const char* cStr)
+{
+	while ( *cStr )
+	{
+		LLPD::usart_transmit( usartNum, *cStr );
+		cStr++;
+	}
+
+	LLPD::usart_transmit( usartNum, '\n' );
+}
+
+void LLPD::usart_log_int (const USART_NUM& usartNum, const char* cStr, int val)
+{
+	while ( *cStr )
+	{
+		LLPD::usart_transmit( usartNum, *cStr );
+		cStr++;
+	}
+
+	char intStrBuf[ (sizeof(int) * 8) + 1 ];
+	itoa( val, intStrBuf, 10 );
+
+	char* character = &intStrBuf[0];
+	while ( *character )
+	{
+		LLPD::usart_transmit( usartNum, *character );
+		character++;
+	}
+
+	LLPD::usart_transmit( usartNum, '\n' );
+}
+
+void LLPD::usart_log_float (const USART_NUM& usartNum, const char* cStr, float val)
+{
+	while ( *cStr )
+	{
+		LLPD::usart_transmit( usartNum, *cStr );
+		cStr++;
+	}
+
+	char floatIntStrBuf[ (sizeof(int) * 8) + 1 ];
+	char floatDecStrBuf[ (sizeof(int) * 8) + 1 ];
+	int floatIntPart = static_cast<int>( val );
+	int floatDecPart = static_cast<int>( (val - floatIntPart) * 1000.0f ); // currently 3 point precision
+	itoa( floatIntPart, floatIntStrBuf, 10 );
+	itoa( floatDecPart, floatDecStrBuf, 10 );
+
+	char* character = &floatIntStrBuf[0];
+	while ( *character )
+	{
+		LLPD::usart_transmit( usartNum, *character );
+		character++;
+	}
+
+	LLPD::usart_transmit( usartNum, '.' );
+
+	character = &floatDecStrBuf[0];
+	while ( *character )
+	{
+		LLPD::usart_transmit( usartNum, *character );
+		character++;
+	}
+
+	LLPD::usart_transmit( usartNum, '\n' );
 }

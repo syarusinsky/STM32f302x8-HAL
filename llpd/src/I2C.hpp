@@ -298,3 +298,75 @@ void LLPD::i2c_master_read (const I2C_NUM& i2cNum, bool setStopCondition, uint8_
 		while ( (i2cPtr->CR2 & I2C_CR2_STOP) && (i2cPtr->ISR & I2C_ISR_BUSY) && (i2cPtr->ISR & I2C_ISR_STOPF) ) {}
 	}
 }
+
+void LLPD::i2c_master_read_into_array (const I2C_NUM& i2cNum, bool setStopCondition, uint8_t numBytes, uint8_t* arr)
+{
+	I2C_TypeDef* i2cPtr = nullptr;
+
+	// get correct i2c pointer
+	if ( i2cNum == I2C_NUM::I2C_1 )
+	{
+		i2cPtr = I2C1;
+	}
+	else if ( i2cNum == I2C_NUM::I2C_2 )
+	{
+		i2cPtr = I2C2;
+	}
+#if defined( STM32F302X8 )
+	else if ( i2cNum == I2C_NUM::I2C_3 )
+	{
+		i2cPtr = I2C3;
+	}
+#endif
+
+	// set read flag
+	i2cPtr->CR2 |= I2C_CR2_RD_WRN;
+
+	// set number of bytes to read
+	i2cPtr->CR2 &= 0b11111111000000001111111111111111;
+	i2cPtr->CR2 |= (numBytes << 16);
+
+	// set start condition
+	i2cPtr->CR2 |= I2C_CR2_START;
+
+	// spinlock to ensure start condition address bits have been sent
+	while ( i2cPtr->CR2 & I2C_CR2_START ) {}
+
+	// in case slave is busy
+	while ( i2cPtr->ISR & I2C_ISR_NACKF )
+	{
+		// clear the stopf and nackf flags
+		i2cPtr->ICR |= I2C_ICR_STOPCF;
+		i2cPtr->ICR |= I2C_ICR_NACKCF;
+
+		// restart the transfer
+		i2cPtr->CR2 |= I2C_CR2_START;
+
+		// spinlock to ensure start condition and address bits have been sent
+		while ( i2cPtr->CR2 & I2C_CR2_START ) {}
+	}
+
+	// spinlock to ensure recieve data register has something to read
+	while ( !(i2cPtr->ISR & I2C_ISR_RXNE) ) {}
+
+	// read data
+	for ( uint8_t byte = 0; byte < numBytes; byte++ )
+	{
+		// spinlock to ensure recieve data register has something to read
+		while ( !(i2cPtr->ISR & I2C_ISR_RXNE) ) {}
+
+		arr[byte] = i2cPtr->RXDR;
+	}
+
+	// spinlock to ensure transfer is complete
+	while ( !(i2cPtr->ISR & I2C_ISR_TC) ) {}
+
+	if ( setStopCondition )
+	{
+		// set stop condition
+		i2cPtr->CR2 |= I2C_CR2_STOP;
+
+		// spinlock to ensure stop condition is detected and bus is not busy
+		while ( (i2cPtr->CR2 & I2C_CR2_STOP) && (i2cPtr->ISR & I2C_ISR_BUSY) && (i2cPtr->ISR & I2C_ISR_STOPF) ) {}
+	}
+}
