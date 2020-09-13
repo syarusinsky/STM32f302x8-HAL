@@ -282,7 +282,7 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi2 miso
-		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_14, GPIO_PUPD::PULL_DOWN, true );
+		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_14, GPIO_PUPD::PULL_UP, true );
 
 		// spi2 mosi
 		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_15, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
