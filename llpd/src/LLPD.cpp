@@ -6,3 +6,4 @@
 #include "DAC.hpp"
 #include "ADC.hpp"
 #include "USART.hpp"
+#include "OpAmp.hpp"

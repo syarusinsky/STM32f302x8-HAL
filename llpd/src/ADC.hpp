@@ -328,37 +328,6 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 #endif
 }
 
-uint16_t LLPD::adc_test()
-{
-	uint8_t numConversions = 1;
-	uint8_t numConversionsOffset = numConversions - 1;
-
-	// set how many conversions will take place
-	ADC1->SQR1 &= ~(ADC_SQR1_L);
-	ADC1->SQR1 |= ( 0x0000000F & numConversionsOffset );
-
-	// setting channel 2 (PINA1) as first conversion
-	ADC1->SQR1 &= ~(ADC_SQR1_SQ1);
-	ADC1->SQR1 |= ( 2 << ADC_SQR1_SQ1_Pos );
-
-	// start conversion
-	ADC1->CR |= ADC_CR_ADSTART;
-
-	// wait for end of conversion flag
-	while ( (ADC1->ISR & ADC_ISR_EOC) == 0 ) {}
-
-	// read data from data register
-	uint16_t data = ADC1->DR;
-
-	// wait for end of sequence
-	while ( (ADC1->ISR & ADC_ISR_EOS) == 0 ) {}
-
-	// clear end of sequence flag
-	ADC1->ISR |= ADC_ISR_EOS;
-
-	return data;
-}
-
 void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channel...)
 {
 	// ensure valid amount of channels

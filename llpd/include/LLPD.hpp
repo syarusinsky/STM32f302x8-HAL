@@ -278,7 +278,6 @@ class LLPD
 		static void adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channel...);
 		static void adc_perform_conversion_sequence();
 		static uint16_t adc_get_channel_value (const ADC_CHANNEL& channel); // 65535 is an invalid value for debugging
-		static uint16_t adc_test();
 
 		// USART usart1( tx = b6, rx = b7 )
 		//       usart2( tx = b3, rx = b4 )
@@ -291,6 +290,9 @@ class LLPD
 		static void usart_log (const USART_NUM& usartNum, const char* cStr); // needs to be proper c string with terminator
 		static void usart_log_int (const USART_NUM& usartNum, const char* cStr, int val);
 		static void usart_log_float (const USART_NUM& usartNum, const char* cStr, float val);
+
+		// Op Amp opamp2( v+ = a7, v- = a5, vout = a6 )
+		static void opamp_init();
 };
 
 #endif // LLPD_H
