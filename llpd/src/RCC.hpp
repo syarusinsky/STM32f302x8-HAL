@@ -48,7 +48,7 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemC
 	}
 }
 
-void LLPD::rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply)
+void LLPD::rcc_pll_enable (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply)
 {
 	// disable pll
 	RCC->CR &= ~(RCC_CR_PLLON);
@@ -134,4 +134,13 @@ void LLPD::rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTI
 
 	// spinlock to wait for PLL ready
 	while ( !(RCC->CR & RCC_CR_PLLRDY) ){}
+}
+
+void LLPD::rcc_pll_disable()
+{
+	// disable pll
+	RCC->CR &= ~(RCC_CR_PLLON);
+
+	// spinlock until pll is off
+	while ( (RCC->CR & RCC_CR_PLLRDY) ) {}
 }

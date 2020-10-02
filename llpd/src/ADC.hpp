@@ -211,29 +211,6 @@ static uint32_t orderNumToMask (uint8_t orderNum)
 
 void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 {
-	// ensure adc is off
-	ADC1->CR |= ADC_CR_ADDIS;
-
-	// setup voltage regulator
-	ADC1->CR &= ~(ADC_CR_ADVREGEN);
-	ADC1->CR |= ADC_CR_ADVREGEN_0;
-
-	// wait 10us for voltage regulator to initialize
-	LLPD::tim6_delay( 10 );
-
-	// start adc calibration
-	ADC1->CR |= ADC_CR_ADCAL;
-
-	// wait for adc calibration to complete
-	while ( (ADC1->CR & ADC_CR_ADCAL) != 0 ) {}
-
-	// set clock mode to use PLL
-#if defined( STM32F302X8 )
-	ADC1_COMMON->CCR &= ~(ADC_CCR_CKMODE);
-#elif defined( STM32F302XC )
-	ADC12_COMMON->CCR &= ~(ADC_CCR_CKMODE);
-#endif
-
 	// set PLL prescaler to 1
 #if defined( STM32F302X8 )
 	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
@@ -242,6 +219,22 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
 	RCC->CFGR2 |= RCC_CFGR2_ADCPRE12_DIV1;
 #endif
+
+	// ensure adc is off
+	ADC1->CR |= ADC_CR_ADDIS;
+
+	// setup voltage regulator
+	ADC1->CR &= ~(ADC_CR_ADVREGEN);
+	ADC1->CR |= ADC_CR_ADVREGEN_0;
+
+	// wait 100us for voltage regulator to initialize
+	LLPD::tim6_delay( 100 );
+
+	// start adc calibration
+	ADC1->CR |= ADC_CR_ADCAL;
+
+	// wait for adc calibration to complete
+	while ( (ADC1->CR & ADC_CR_ADCAL) != 0 ) {}
 
 	// enable clock to adc
 #if defined( STM32F302X8 )
@@ -309,22 +302,22 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 			( clkRegVal << (spacing * (17 - offset)) ) |
 			( clkRegVal << (spacing * (18 - offset)) );
 
-	// TODO possibly set vrefen????
+	// set clock mode to use synchronous
 #if defined( STM32F302X8 )
-	ADC1_COMMON->CCR |= ADC_CCR_VREFEN;
+	ADC1_COMMON->CCR &= ~(ADC_CCR_CKMODE);
+	ADC1_COMMON->CCR |= ADC_CCR_CKMODE_0;
 #elif defined( STM32F302XC )
-	ADC12_COMMON->CCR |= ADC_CCR_VREFEN;
+	ADC12_COMMON->CCR &= ~(ADC_CCR_CKMODE);
+	ADC12_COMMON->CCR |= ADC_CCR_CKMODE_0;
 #endif
 
-	// TODO possibly set data alignment?
-
-	// TODO possibly set adc prescaler
+	// set clock prescaler to use AHB
 #if defined( STM32F302X8 )
 	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
-	RCC->CFGR2 |= (0b11011 << 4);
+	RCC->CFGR2 |= (0b00000 << 4);
 #elif defined( STM32F302XC )
 	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
-	RCC->CFGR2 |= (0b11011 << 4);
+	RCC->CFGR2 |= (0b00000 << 4);
 #endif
 }
 

@@ -224,10 +224,10 @@ enum class USART_STOP_BITS
 class LLPD
 {
 	public:
-		// SYSTEM CLOCK (pll setup is not currently working, need to debug why in the future, may just need VDDA and VSSA)
 		// when using PLL as system clock, you should call rcc_pll_setup first
 		static void rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemClock);
-		static void rcc_pll_setup (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply);
+		static void rcc_pll_enable (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply);
+		static void rcc_pll_disable();
 
 		// GPIO
 		static void gpio_enable_clock (const GPIO_PORT& port);
@@ -273,6 +273,7 @@ class LLPD
 		static void dac_send (uint16_t data);
 
 		// ADC
+		// initialization requires PLL
 		// initialization needs to take place after counter is started for tim6, since it uses delay function
 		static void adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample);
 		static void adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channel...);
