@@ -46,6 +46,11 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemC
 		// turn on clock security system for monitoring
 		RCC->CR |= RCC_CR_CSSON;
 	}
+
+	// set APB1, APB2, and AHB clocks to no prescaling
+	RCC->CFGR &= ~(RCC_CFGR_PPRE1);
+	RCC->CFGR &= ~(RCC_CFGR_PPRE2);
+	RCC->CFGR &= ~(RCC_CFGR_HPRE);
 }
 
 void LLPD::rcc_pll_enable (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply)

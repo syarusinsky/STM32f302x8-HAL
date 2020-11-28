@@ -10,6 +10,7 @@
 
 // this array is used to hold the values of each channel after a conversion sequence
 static uint16_t channelValues[16] = { 0 };
+static uint8_t  numberOfChannels = 0;
 
 // this array is used to hold the mapping of the channel order to channel number
 static ADC_CHANNEL channelOrder[16] = { ADC_CHANNEL::CHAN_INVALID };
@@ -211,30 +212,21 @@ static uint32_t orderNumToMask (uint8_t orderNum)
 
 void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 {
-	// set PLL prescaler to 1
-#if defined( STM32F302X8 )
-	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
-	RCC->CFGR2 |= RCC_CFGR2_ADC1PRES_DIV1;
-#elif defined( STM32F302XC )
-	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
-	RCC->CFGR2 |= RCC_CFGR2_ADCPRE12_DIV1;
+	// reset adc registers
+#if defined ( STM32F302X8 )
+	RCC->AHBRSTR |= RCC_AHBRSTR_ADC1RST;
+	RCC->AHBRSTR &= ~(RCC_AHBRSTR_ADC1RST);
+#elif defined ( STM32F302XC )
+	RCC->AHBRSTR |= RCC_AHBRSTR_ADC12RST;
+	RCC->AHBRSTR &= ~(RCC_AHBRSTR_ADC12RST);
 #endif
 
-	// ensure adc is off
-	ADC1->CR |= ADC_CR_ADDIS;
-
-	// setup voltage regulator
-	ADC1->CR &= ~(ADC_CR_ADVREGEN);
-	ADC1->CR |= ADC_CR_ADVREGEN_0;
-
-	// wait 100us for voltage regulator to initialize
-	LLPD::tim6_delay( 100 );
-
-	// start adc calibration
-	ADC1->CR |= ADC_CR_ADCAL;
-
-	// wait for adc calibration to complete
-	while ( (ADC1->CR & ADC_CR_ADCAL) != 0 ) {}
+	// set adc prescaler to use AHB clock
+#if defined( STM32F302X8 )
+	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
+#elif defined( STM32F302XC )
+	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
+#endif
 
 	// enable clock to adc
 #if defined( STM32F302X8 )
@@ -243,11 +235,43 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 	RCC->AHBENR |= RCC_AHBENR_ADC12EN;
 #endif
 
+	// set clock mode to use synchronous
+#if defined( STM32F302X8 )
+	ADC1_COMMON->CCR &= ~(ADC_CCR_CKMODE);
+	ADC1_COMMON->CCR |= ADC_CCR_CKMODE_0;
+#elif defined( STM32F302XC )
+	ADC12_COMMON->CCR &= ~(ADC_CCR_CKMODE);
+	ADC12_COMMON->CCR |= ADC_CCR_CKMODE_0;
+#endif
+
+	// set adcs to combined simultaneous regular and injected mode
+	ADC12_COMMON->CCR &= ~(ADC12_CCR_MULTI);
+	ADC12_COMMON->CCR |= ADC12_CCR_MULTI_0;
+
+	// setup voltage regulator
+	ADC1->CR &= ~(ADC_CR_ADVREGEN);
+	ADC1->CR |= ADC_CR_ADVREGEN_0;
+
+	// wait 100us for voltage regulator to initialize
+	LLPD::tim6_delay( 100 );
+
+	// ensure adc is disabled
+	while ( ADC1->CR & ADC_CR_ADEN ) {}
+
+	// start adc calibration
+	ADC1->CR |= ADC_CR_ADCAL;
+
+	// wait for adc calibration to complete
+	while ( ADC1->CR & ADC_CR_ADCAL ) {}
+
+	// wait until CR is clear except adc voltage regulator bits (otherwise ADEN cannot be set)
+	while ( ADC1->CR & ~(ADC_CR_ADVREGEN) ) {}
+
 	// enable adc
 	ADC1->CR |= ADC_CR_ADEN;
 
 	// wait until adc is ready
-	while ( (ADC1->ISR & ADC_ISR_ADRDY) == 0 ) {}
+	while ( ADC1->ISR & ADC_ISR_ADRDY ) {}
 
 	// set cycles per adc sample
 	uint8_t clkRegVal = 0;
@@ -301,24 +325,6 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 			( clkRegVal << (spacing * (16 - offset)) ) |
 			( clkRegVal << (spacing * (17 - offset)) ) |
 			( clkRegVal << (spacing * (18 - offset)) );
-
-	// set clock mode to use synchronous
-#if defined( STM32F302X8 )
-	ADC1_COMMON->CCR &= ~(ADC_CCR_CKMODE);
-	ADC1_COMMON->CCR |= ADC_CCR_CKMODE_0;
-#elif defined( STM32F302XC )
-	ADC12_COMMON->CCR &= ~(ADC_CCR_CKMODE);
-	ADC12_COMMON->CCR |= ADC_CCR_CKMODE_0;
-#endif
-
-	// set clock prescaler to use AHB
-#if defined( STM32F302X8 )
-	RCC->CFGR2 &= ~(RCC_CFGR2_ADC1PRES);
-	RCC->CFGR2 |= (0b00000 << 4);
-#elif defined( STM32F302XC )
-	RCC->CFGR2 &= ~(RCC_CFGR2_ADCPRE12);
-	RCC->CFGR2 |= (0b00000 << 4);
-#endif
 }
 
 void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channel...)
@@ -326,6 +332,9 @@ void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channe
 	// ensure valid amount of channels
 	if ( numChannels > 0 && numChannels <= 16 )
 	{
+		// cache the number of channels so we can use this later
+		numberOfChannels = numChannels;
+
 		// reset 'order' array
 		for ( uint8_t chanNum = 0; chanNum < 16; chanNum++ )
 		{
@@ -384,34 +393,74 @@ void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channe
 		}
 
 		va_end( channels );
+
+		// enable dma clock and syscfg clock
+		RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+		RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+
+		// disable channel 1 (adc)
+		DMA1_Channel1->CCR &= ~(DMA_CCR_EN);
+
+		// set peripheral address for channel 1 (adc)
+		DMA1_Channel1->CPAR = (uint32_t) &ADC1->DR;
+
+		// set the memory address for where the adc data will be stored
+		DMA1_Channel1->CMAR = (uint32_t) channelValues;
+
+		// configure number of data to be transferred
+		DMA1_Channel1->CNDTR = numChannels;
+
+		// configure channel priority to very high
+		DMA1_Channel1->CCR |= DMA_CCR_PL;
+
+		// set data transfer direction from peripheral to memory
+		DMA1_Channel1->CCR &= ~(DMA_CCR_DIR);
+
+		// ensure circular mode is off
+		DMA1_Channel1->CCR &= ~(DMA_CCR_CIRC);
+
+		// ensure peripheral incrementing is off
+		DMA1_Channel1->CCR &= ~(DMA_CCR_PINC);
+
+		// enable memory incrementing
+		DMA1_Channel1->CCR |= DMA_CCR_MINC;
+
+		// ensure memory-to-memory mapping is disabled
+		DMA1_Channel1->CCR &= ~(DMA_CCR_MEM2MEM);
+
+		// set the peripheral and memory data sizes to 16 bits
+		DMA1_Channel1->CCR &= ~(DMA_CCR_MSIZE);
+		DMA1_Channel1->CCR |= DMA_CCR_MSIZE_0;
+		DMA1_Channel1->CCR &= ~(DMA_CCR_PSIZE);
+		DMA1_Channel1->CCR |= DMA_CCR_PSIZE_0;
+
+		// set up adc to use dma one-shot mode
+		ADC1->CFGR &= ~(ADC_CFGR_DMACFG);
+		ADC1->CFGR |= ADC_CFGR_DMAEN;
 	}
 }
 
 void LLPD::adc_perform_conversion_sequence()
 {
+	// disable dma channel 1 (adc)
+	DMA1_Channel1->CCR &= ~(DMA_CCR_EN);
+
+	// configure number of data to be transferred
+	DMA1_Channel1->CNDTR = numberOfChannels;
+
+	// enable dma channel 1 (adc)
+	DMA1_Channel1->CCR |= DMA_CCR_EN;
+
 	// start conversion
 	ADC1->CR |= ADC_CR_ADSTART;
 
-	uint8_t channelIndex = 0;
-	ADC_CHANNEL channel = channelOrder[channelIndex];
-
-	while ( channel != ADC_CHANNEL::CHAN_INVALID && channelIndex < 16 )
-	{
-		// wait for end of conversion flag
-		while ( (ADC1->ISR & ADC_ISR_EOC) == 0 ) {}
-
-		// read data from data register into channel value array
-		channelValues[channelIndex] = ADC1->DR;
-
-		channelIndex++;
-		channel = channelOrder[channelIndex];
-	}
-
-	// wait for end of sequence
+	// wait for end of sequence to ensure the last transfer was completed
 	while ( (ADC1->ISR & ADC_ISR_EOS) == 0 ) {}
 
 	// clear end of sequence flag
 	ADC1->ISR |= ADC_ISR_EOS;
+
+
 }
 
 uint16_t LLPD::adc_get_channel_value (const ADC_CHANNEL& channel)
