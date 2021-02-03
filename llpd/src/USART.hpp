@@ -14,7 +14,7 @@ static uint16_t usart2WordLenMask = 0b0000000011111111;
 static uint16_t usart3WordLenMask = 0b0000000011111111;
 
 void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordLen, const USART_PARITY& parity,
-			const USART_CONF& conf, const USART_STOP_BITS& stopBits, const unsigned int sysClockFreq,
+			const USART_CONF& conf, const USART_STOP_BITS& stopBits, const unsigned int periphClockFreq,
 			const unsigned int baudRate)
 {
 	USART_TypeDef* usart = nullptr;
@@ -23,6 +23,9 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 	// enable usart peripheral clock
 	if ( usartNum == USART_NUM::USART_1 )
 	{
+		// use system clock as clock source
+		RCC->CFGR3 &= ~(RCC_CFGR3_USART1SW_Msk);
+		RCC->CFGR3 |= RCC_CFGR3_USART1SW_SYSCLK;
 		RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 		usart = USART1;
 		usartWordLenMask = &usart1WordLenMask;
@@ -45,6 +48,9 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 	}
 	else if ( usartNum == USART_NUM::USART_2 )
 	{
+		// use system clock as clock source
+		RCC->CFGR3 &= ~(RCC_CFGR3_USART2SW_Msk);
+		RCC->CFGR3 |= RCC_CFGR3_USART2SW_SYSCLK;
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 		usart = USART2;
 		usartWordLenMask = &usart2WordLenMask;
@@ -67,6 +73,9 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 	}
 	else if ( usartNum == USART_NUM::USART_3 )
 	{
+		// use system clock as clock source
+		RCC->CFGR3 &= ~(RCC_CFGR3_USART3SW_Msk);
+		RCC->CFGR3 |= RCC_CFGR3_USART3SW_SYSCLK;
 		RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
 		usart = USART3;
 		usartWordLenMask = &usart3WordLenMask;
@@ -232,7 +241,7 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 		}
 
 		// set baud rate
-		uint16_t usartDiv = sysClockFreq / baudRate;
+		uint16_t usartDiv = periphClockFreq / baudRate;
 		usart->BRR = usartDiv;
 
 		// enable usart

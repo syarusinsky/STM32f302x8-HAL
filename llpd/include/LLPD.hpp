@@ -29,6 +29,37 @@ enum class RCC_PLL_MULTIPLY
 	BY_16
 };
 
+enum class RCC_AHB_PRES
+{
+	BY_1,
+	BY_2,
+	BY_4,
+	BY_8,
+	BY_16,
+	BY_64,
+	BY_128,
+	BY_256,
+	BY_512
+};
+
+enum class RCC_APB1_PRES
+{
+	AHB_BY_1,
+	AHB_BY_2,
+	AHB_BY_4,
+	AHB_BY_8,
+	AHB_BY_16
+};
+
+enum class RCC_APB2_PRES
+{
+	AHB_BY_1,
+	AHB_BY_2,
+	AHB_BY_4,
+	AHB_BY_8,
+	AHB_BY_16
+};
+
 enum class GPIO_PORT
 {
 	A,
@@ -224,10 +255,15 @@ enum class USART_STOP_BITS
 class LLPD
 {
 	public:
-		// when using PLL as system clock, you should call rcc_pll_setup first
-		static void rcc_clock_setup (const RCC_CLOCK_SOURCE& source, bool usePllAsSystemClock);
-		static void rcc_pll_enable (const RCC_CLOCK_SOURCE& pllSource, const RCC_PLL_MULTIPLY& pllMultiply);
+		// RCC
+		static void rcc_clock_setup (const RCC_CLOCK_SOURCE& source, unsigned int freq);
+		static void rcc_clock_setup (const RCC_CLOCK_SOURCE& pllSource, bool hseDivBy2, const RCC_PLL_MULTIPLY& pllMultiply,
+						unsigned int freq); 	// use this function for pll as system clock, note that hsi as pll source
+									// will be divided by 2
+		static void rcc_pll_enable (const RCC_CLOCK_SOURCE& pllSource, bool hseDivBy2, const RCC_PLL_MULTIPLY& pllMultiply);
 		static void rcc_pll_disable();
+		static void rcc_set_periph_clock_prescalers (const RCC_AHB_PRES &ahbPres, const RCC_APB1_PRES &apb1Pres,
+								const RCC_APB2_PRES &apb2Pres ); // note that APB1 clock must be <= 36MHz
 
 		// GPIO
 		static void gpio_enable_clock (const GPIO_PORT& port);
@@ -284,7 +320,7 @@ class LLPD
 		//       usart2( tx = b3, rx = b4 )
 		//       usart3( tx = b9, rx = b8 ) for stm32f302x8 OR ( tx = b10, rx = b11 ) for stm32f302xc
 		static void usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordLen, const USART_PARITY& parity,
-					const USART_CONF& conf, const USART_STOP_BITS& stopBits, const unsigned int sysClockFreq,
+					const USART_CONF& conf, const USART_STOP_BITS& stopBits, const unsigned int periphClockFreq,
 					const unsigned int baudRate);
 		static void usart_transmit (const USART_NUM& usartNum, uint16_t data);
 		static uint16_t usart_receive (const USART_NUM& usartNum);

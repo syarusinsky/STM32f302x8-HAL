@@ -24,6 +24,10 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 
 	if ( i2cNum == I2C_NUM::I2C_1 )
 	{
+		// set i2c clock source as system clock
+		RCC->CFGR3 &= ~(RCC_CFGR3_I2C1SW_Msk);
+		RCC->CFGR3 |= RCC_CFGR3_I2C1SW_SYSCLK;
+
 		rccI2CEnableBits = RCC_APB1ENR_I2C1EN;
 
 		i2cPtr = I2C1;
@@ -41,6 +45,10 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 	}
 	else if ( i2cNum == I2C_NUM::I2C_2 )
 	{
+		// set i2c clock source as system clock
+		RCC->CFGR3 &= ~(RCC_CFGR3_I2C2SW_Msk);
+		RCC->CFGR3 |= RCC_CFGR3_I2C2SW_SYSCLK;
+
 		rccI2CEnableBits = RCC_APB1ENR_I2C2EN;
 
 		i2cPtr = I2C2;
@@ -59,6 +67,10 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 #if defined( STM32F302X8 )
 	else if ( i2cNum == I2C_NUM::I2C_3 )
 	{
+		// set i2c clock source as system clock
+		RCC->CFGR3 &= ~(RCC_CFGR3_I2C3SW_Msk);
+		RCC->CFGR3 |= RCC_CFGR3_I2C3SW_SYSCLK;
+
 		rccI2CEnableBits = RCC_APB1ENR_I2C3EN;
 
 		i2cPtr = I2C3;
