@@ -28,13 +28,13 @@ static void setup_spi_registers (SPI_TypeDef* spiPtr, const SPI_BAUD_RATE& baudR
 		// reset registers
 		if ( spiPtr == SPI2 )
 		{
-			RCC->APB2RSTR |= RCC_APB1RSTR_SPI2RST;
-			RCC->APB2RSTR &= ~(RCC_APB1RSTR_SPI2RST);
+			RCC->APB1RSTR |= RCC_APB1RSTR_SPI2RST;
+			RCC->APB1RSTR &= ~(RCC_APB1RSTR_SPI2RST);
 		}
 		else if ( spiPtr == SPI3 )
 		{
-			RCC->APB2RSTR |= RCC_APB1RSTR_SPI3RST;
-			RCC->APB2RSTR &= ~(RCC_APB1RSTR_SPI3RST);
+			RCC->APB1RSTR |= RCC_APB1RSTR_SPI3RST;
+			RCC->APB1RSTR &= ~(RCC_APB1RSTR_SPI3RST);
 		}
 
 		// set baud rate
@@ -278,14 +278,15 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 				| (afValue << (afPin15 * afWidth));
 
 		// spi2 sck
-		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_13, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_13, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi2 miso
-		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_14, GPIO_PUPD::PULL_UP, true );
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_14, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
+					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi2 mosi
-		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_15, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_15, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// set sck low
@@ -306,14 +307,15 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 				| (afValue << (afPin5 * afWidth));
 
 		// spi3 sck
-		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_3, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_3, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi3 miso
-		gpio_digital_input_setup( GPIO_PORT::B, GPIO_PIN::PIN_4, GPIO_PUPD::PULL_DOWN, true );
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_4, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
+					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi3 mosi
-		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_5, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+		gpio_output_setup( GPIO_PORT::B, GPIO_PIN::PIN_5, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// set sck low

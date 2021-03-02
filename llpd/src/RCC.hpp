@@ -35,9 +35,6 @@ static void ensureCorrectFlashLatency (unsigned int freq)
 
 void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, unsigned int freq)
 {
-	// since the flash latency might not be set correctly, we check for this first
-	ensureCorrectFlashLatency( freq );
-
 	// set clock source
 	if ( source == RCC_CLOCK_SOURCE::INTERNAL )
 	{
@@ -50,6 +47,8 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, unsigned int freq)
 
 		// set system clock to hsi
 		RCC->CFGR &= ~(RCC_CFGR_SW);
+
+		ensureCorrectFlashLatency( freq );
 	}
 	else if ( source == RCC_CLOCK_SOURCE::EXTERNAL )
 	{
@@ -63,6 +62,8 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, unsigned int freq)
 		RCC->CFGR &= ~(RCC_CFGR_SW);
 		RCC->CFGR |= RCC_CFGR_SW_HSE;
 
+		ensureCorrectFlashLatency( freq );
+
 		// turn on clock security system for monitoring
 		RCC->CR |= RCC_CR_CSSON;
 	}
@@ -70,9 +71,6 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& source, unsigned int freq)
 
 void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& pllSource, bool hseDivBy2, const RCC_PLL_MULTIPLY& pllMultiply, unsigned int freq)
 {
-	// since the flash latency might not be set correctly, we check for this first
-	ensureCorrectFlashLatency( freq );
-
 	if ( pllSource == RCC_CLOCK_SOURCE::INTERNAL )
 	{
 		// spinlock to wait for HSI ready
@@ -91,6 +89,8 @@ void LLPD::rcc_clock_setup (const RCC_CLOCK_SOURCE& pllSource, bool hseDivBy2, c
 	}
 
 	LLPD::rcc_pll_enable( pllSource, hseDivBy2, pllMultiply );
+
+	ensureCorrectFlashLatency( freq );
 
 	// set pll as system clock
 	RCC->CFGR &= ~(RCC_CFGR_SW);

@@ -201,28 +201,7 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 		{
 			usart->CR1 |= USART_CR1_TE;
 			usart->CR1 |= USART_CR1_RE;
-			usart->CR1 |= USART_CR1_RXNEIE;
 			usingReceiver = true;
-		}
-
-		if ( usingReceiver )
-		{
-			// enable interrupt service routine with priority behind audio timer
-			if ( usartNum == USART_NUM::USART_1 )
-			{
-				NVIC_SetPriority( USART1_IRQn, 0x01 );
-				NVIC_EnableIRQ( USART1_IRQn );
-			}
-			else if ( usartNum == USART_NUM::USART_2 )
-			{
-				NVIC_SetPriority( USART2_IRQn, 0x01 );
-				NVIC_EnableIRQ( USART2_IRQn );
-			}
-			else if ( usartNum == USART_NUM::USART_3 )
-			{
-				NVIC_SetPriority( USART3_IRQn, 0x01 );
-				NVIC_EnableIRQ( USART3_IRQn );
-			}
 		}
 
 		// set oversampling to by 16
@@ -244,8 +223,35 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 		uint16_t usartDiv = periphClockFreq / baudRate;
 		usart->BRR = usartDiv;
 
-		// enable usart
-		usart->CR1 |= USART_CR1_UE;
+		if ( usingReceiver )
+		{
+			usart->CR1 |= USART_CR1_RXNEIE;
+
+			// enable usart
+			usart->CR1 |= USART_CR1_UE;
+
+			// enable interrupt service routine with priority behind audio timer
+			if ( usartNum == USART_NUM::USART_1 )
+			{
+				NVIC_SetPriority( USART1_IRQn, 0x01 );
+				NVIC_EnableIRQ( USART1_IRQn );
+			}
+			else if ( usartNum == USART_NUM::USART_2 )
+			{
+				NVIC_SetPriority( USART2_IRQn, 0x01 );
+				NVIC_EnableIRQ( USART2_IRQn );
+			}
+			else if ( usartNum == USART_NUM::USART_3 )
+			{
+				NVIC_SetPriority( USART3_IRQn, 0x01 );
+				NVIC_EnableIRQ( USART3_IRQn );
+			}
+		}
+		else
+		{
+			// enable usart
+			usart->CR1 |= USART_CR1_UE;
+		}
 	}
 }
 
@@ -302,6 +308,12 @@ uint16_t LLPD::usart_receive (const USART_NUM& usartNum)
 
 	if ( usart )
 	{
+		// if there's been an overrun, clear the overrun error flag
+		if ( usart->ISR & USART_ISR_ORE )
+		{
+			usart->ICR |= USART_ICR_ORECF;
+		}
+
 		// wait until there is data to read in the read data register
 		while ( ! (usart->ISR & USART_ISR_RXNE) ) {}
 
