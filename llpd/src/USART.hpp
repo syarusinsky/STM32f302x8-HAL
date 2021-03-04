@@ -252,6 +252,9 @@ void LLPD::usart_init (const USART_NUM& usartNum, const USART_WORD_LENGTH& wordL
 			// enable usart
 			usart->CR1 |= USART_CR1_UE;
 		}
+
+		// clear any set flags
+		usart->ICR = 0b11111111;
 	}
 }
 
