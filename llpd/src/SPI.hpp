@@ -38,49 +38,49 @@ static void setup_spi_registers (SPI_TypeDef* spiPtr, const SPI_BAUD_RATE& baudR
 		}
 
 		// set baud rate
-		if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_2 )
+		if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_2 )
 		{
 			spiPtr->CR1 &= ~(SPI_CR1_BR_0);
 			spiPtr->CR1 &= ~(SPI_CR1_BR_1);
 			spiPtr->CR1 &= ~(SPI_CR1_BR_2);
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_4 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_4 )
 		{
 			spiPtr->CR1 |= SPI_CR1_BR_0;
 			spiPtr->CR1 &= ~(SPI_CR1_BR_1);
 			spiPtr->CR1 &= ~(SPI_CR1_BR_2);
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_8 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_8 )
 		{
 			spiPtr->CR1 &= ~(SPI_CR1_BR_0);
 			spiPtr->CR1 |= SPI_CR1_BR_1;
 			spiPtr->CR1 &= ~(SPI_CR1_BR_2);
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_16 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_16 )
 		{
 			spiPtr->CR1 |= SPI_CR1_BR_0;
 			spiPtr->CR1 |= SPI_CR1_BR_1;
 			spiPtr->CR1 &= ~(SPI_CR1_BR_2);
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_32 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_32 )
 		{
 			spiPtr->CR1 &= ~(SPI_CR1_BR_0);
 			spiPtr->CR1 &= ~(SPI_CR1_BR_1);
 			spiPtr->CR1 |= SPI_CR1_BR_2;
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_64 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_64 )
 		{
 			spiPtr->CR1 |= SPI_CR1_BR_0;
 			spiPtr->CR1 &= ~(SPI_CR1_BR_1);
 			spiPtr->CR1 |= SPI_CR1_BR_2;
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_128 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_128 )
 		{
 			spiPtr->CR1 &= ~(SPI_CR1_BR_0);
 			spiPtr->CR1 |= SPI_CR1_BR_1;
 			spiPtr->CR1 |= SPI_CR1_BR_2;
 		}
-		else if ( baudRate == SPI_BAUD_RATE::SYSCLK_DIV_BY_256 )
+		else if ( baudRate == SPI_BAUD_RATE::APB1CLK_DIV_BY_256 )
 		{
 			spiPtr->CR1 |= SPI_CR1_BR_0;
 			spiPtr->CR1 |= SPI_CR1_BR_1;
