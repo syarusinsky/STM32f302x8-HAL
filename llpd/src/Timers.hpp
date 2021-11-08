@@ -17,7 +17,7 @@ void LLPD::tim6_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInte
 {
 	// store sample rate for delay functions
 	tim6InterruptRate = interruptRate;
-	tim6USecondIncr = 1000000.0f / tim6InterruptRate;
+	tim6USecondIncr = 1000000.0f / static_cast<float>( tim6InterruptRate );
 
 	// make sure timer is disabled during setup
 	TIM6->CR1 &= ~(TIM_CR1_CEN);
