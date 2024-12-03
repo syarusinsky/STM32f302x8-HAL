@@ -416,8 +416,8 @@ void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channe
 		// set data transfer direction from peripheral to memory
 		DMA1_Channel1->CCR &= ~(DMA_CCR_DIR);
 
-		// ensure circular mode is off
-		DMA1_Channel1->CCR &= ~(DMA_CCR_CIRC);
+		// ensure circular mode is on
+		DMA1_Channel1->CCR |= DMA_CCR_CIRC;
 
 		// ensure peripheral incrementing is off
 		DMA1_Channel1->CCR &= ~(DMA_CCR_PINC);
@@ -437,30 +437,25 @@ void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channe
 		// set up adc to use dma one-shot mode
 		ADC1->CFGR &= ~(ADC_CFGR_DMACFG);
 		ADC1->CFGR |= ADC_CFGR_DMAEN;
+
+		// enable dma channel 1 (adc)
+		DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+		// start conversion
+		ADC1->CR |= ADC_CR_ADSTART;
 	}
 }
 
 void LLPD::adc_perform_conversion_sequence()
 {
-	// disable dma channel 1 (adc)
-	DMA1_Channel1->CCR &= ~(DMA_CCR_EN);
-
-	// configure number of data to be transferred
-	DMA1_Channel1->CNDTR = numberOfChannels;
-
-	// enable dma channel 1 (adc)
-	DMA1_Channel1->CCR |= DMA_CCR_EN;
-
-	// start conversion
-	ADC1->CR |= ADC_CR_ADSTART;
-
 	// wait for end of sequence to ensure the last transfer was completed
 	while ( (ADC1->ISR & ADC_ISR_EOS) == 0 ) {}
 
 	// clear end of sequence flag
 	ADC1->ISR |= ADC_ISR_EOS;
 
-
+	// start conversion
+	ADC1->CR |= ADC_CR_ADSTART;
 }
 
 uint16_t LLPD::adc_get_channel_value (const ADC_CHANNEL& channel)
