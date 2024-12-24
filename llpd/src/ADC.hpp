@@ -327,7 +327,7 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 			( clkRegVal << (spacing * (18 - offset)) );
 }
 
-void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channel...)
+void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, const ADC_CHANNEL& channel...)
 {
 	// ensure valid amount of channels
 	if ( numChannels > 0 && numChannels <= 16 )
@@ -436,6 +436,22 @@ void LLPD::adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channe
 
 		// set up adc to use dma one-shot mode
 		ADC1->CFGR &= ~(ADC_CFGR_DMACFG);
+
+		if ( tim6Trig )
+		{
+			// we actually want dma to use circular mode
+			ADC1->CFGR |= ADC_CFGR_DMACFG;
+
+			// set external trigger rising edge with source to tim6
+			ADC1->CFGR |= ADC_CFGR_EXTEN_0;
+			ADC1->CFGR &= ~(ADC_CFGR_EXTEN_1);
+			ADC1->CFGR |= ADC_CFGR_EXTSEL_0;
+			ADC1->CFGR &= ~(ADC_CFGR_EXTSEL_1);
+			ADC1->CFGR |= ADC_CFGR_EXTSEL_2;
+			ADC1->CFGR |= ADC_CFGR_EXTSEL_3;
+		}
+
+		// enable dma
 		ADC1->CFGR |= ADC_CFGR_DMAEN;
 
 		// enable dma channel 1 (adc)

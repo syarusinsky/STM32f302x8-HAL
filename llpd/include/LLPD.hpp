@@ -312,7 +312,7 @@ class LLPD
 		// initialization requires PLL
 		// initialization needs to take place after counter is started for tim6, since it uses delay function
 		static void adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample);
-		static void adc_set_channel_order (uint8_t numChannels, const ADC_CHANNEL& channel...);
+		static void adc_set_channel_order (bool tim6Trigger, uint8_t numChannels, const ADC_CHANNEL& channel...);
 		static void adc_perform_conversion_sequence();
 		static uint16_t adc_get_channel_value (const ADC_CHANNEL& channel); // 65535 is an invalid value for debugging
 
