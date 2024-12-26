@@ -312,8 +312,13 @@ class LLPD
 		// initialization requires PLL
 		// initialization needs to take place after counter is started for tim6, since it uses delay function
 		static void adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample);
-		static void adc_set_channel_order (bool tim6Trigger, uint8_t numChannels, const ADC_CHANNEL& channel...);
-		static void adc_perform_conversion_sequence();
+		static void adc_set_channel_order (bool tim6Trig, // whether or not to trigger conversions by tim6
+							uint8_t numChannels,
+							ADC_CHANNEL chanToDma, // the channel you want to dma to dmaLoc, needs tim6Trig
+							uint32_t* dmaLoc, // the memory location you want to dma to, or nullptr if not desired
+							uint32_t dmaLocSize, // circular buffer size
+							const ADC_CHANNEL& channel...); // channels to convert given in order of conversion
+		static void adc_perform_conversion_sequence(); // do not use if triggering conversions by tim6
 		static uint16_t adc_get_channel_value (const ADC_CHANNEL& channel); // 65535 is an invalid value for debugging
 
 		// USART usart1( tx = b6, rx = b7 )

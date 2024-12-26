@@ -82,6 +82,24 @@ static uint8_t adcChannelToNum (const ADC_CHANNEL& channel)
 	return channelNum;
 }
 
+
+static uint8_t adcChannelOrderToValueIndex (const ADC_CHANNEL& channel)
+{
+	uint8_t index = 0;
+
+	for ( unsigned int idx = 0; idx < 16; idx++ )
+	{
+		index = idx;
+
+		if ( channelOrder[idx] == channel )
+		{
+			break;
+		}
+	}
+
+	return index;
+}
+
 static uint8_t orderNumToPos (uint8_t orderNum)
 {
 	uint8_t position = ADC_SQR1_SQ1_Pos;
@@ -327,7 +345,7 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 			( clkRegVal << (spacing * (18 - offset)) );
 }
 
-void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, const ADC_CHANNEL& channel...)
+void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, ADC_CHANNEL chanToDma, uint32_t* dmaLoc, uint32_t dmaLocSize, const ADC_CHANNEL& channel...)
 {
 	// ensure valid amount of channels
 	if ( numChannels > 0 && numChannels <= 16 )
@@ -410,14 +428,12 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, const ADC_
 		// configure number of data to be transferred
 		DMA1_Channel1->CNDTR = numChannels;
 
-		// configure channel priority to very high
-		DMA1_Channel1->CCR |= DMA_CCR_PL;
+		// configure channel priority to high
+		DMA1_Channel1->CCR &= ~(DMA_CCR_PL);
+		DMA1_Channel1->CCR |= DMA_CCR_PL_1;
 
 		// set data transfer direction from peripheral to memory
 		DMA1_Channel1->CCR &= ~(DMA_CCR_DIR);
-
-		// ensure circular mode is on
-		DMA1_Channel1->CCR |= DMA_CCR_CIRC;
 
 		// ensure peripheral incrementing is off
 		DMA1_Channel1->CCR &= ~(DMA_CCR_PINC);
@@ -427,6 +443,9 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, const ADC_
 
 		// ensure memory-to-memory mapping is disabled
 		DMA1_Channel1->CCR &= ~(DMA_CCR_MEM2MEM);
+
+		// ensure circular mode is on
+		DMA1_Channel1->CCR |= DMA_CCR_CIRC;
 
 		// set the peripheral and memory data sizes to 16 bits
 		DMA1_Channel1->CCR &= ~(DMA_CCR_MSIZE);
@@ -449,6 +468,46 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, const ADC_
 			ADC1->CFGR &= ~(ADC_CFGR_EXTSEL_1);
 			ADC1->CFGR |= ADC_CFGR_EXTSEL_2;
 			ADC1->CFGR |= ADC_CFGR_EXTSEL_3;
+
+			if ( chanToDma != ADC_CHANNEL::CHAN_INVALID && dmaLoc != nullptr )
+			{
+				// disable channel 3 (tim6up)
+				DMA1_Channel3->CCR &= ~(DMA_CCR_EN);
+
+				// set peripheral address for the location of the stored channel value
+				DMA1_Channel3->CPAR = (uint32_t) &channelValues[ adcChannelOrderToValueIndex(chanToDma) ];
+
+				// set the memory address for where the adc data will be stored
+				DMA1_Channel3->CMAR = (uint32_t) dmaLoc;
+
+				// configure number of data to be transferred
+				DMA1_Channel3->CNDTR = dmaLocSize;
+
+				// configure channel priority to medium
+				DMA1_Channel3->CCR &= ~(DMA_CCR_PL);
+				DMA1_Channel3->CCR |= DMA_CCR_PL_0;
+
+				// set data transfer direction from peripheral to memory
+				DMA1_Channel3->CCR &= ~(DMA_CCR_DIR);
+
+				// ensure peripheral incrementing is off
+				DMA1_Channel3->CCR &= ~(DMA_CCR_PINC);
+
+				// enable memory incrementing
+				DMA1_Channel3->CCR |= DMA_CCR_MINC;
+
+				// ensure memory-to-memory mapping is disabled
+				DMA1_Channel3->CCR &= ~(DMA_CCR_MEM2MEM);
+
+				// ensure circular mode is on
+				DMA1_Channel3->CCR |= DMA_CCR_CIRC;
+
+				// set the peripheral and memory data sizes to 16 bits
+				DMA1_Channel3->CCR &= ~(DMA_CCR_MSIZE);
+				DMA1_Channel3->CCR |= DMA_CCR_MSIZE_0;
+				DMA1_Channel3->CCR &= ~(DMA_CCR_PSIZE);
+				DMA1_Channel3->CCR |= DMA_CCR_PSIZE_0;
+			}
 		}
 
 		// enable dma
@@ -456,6 +515,12 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, const ADC_
 
 		// enable dma channel 1 (adc)
 		DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+		if ( tim6Trig && chanToDma != ADC_CHANNEL::CHAN_INVALID && dmaLoc != nullptr )
+		{
+			// enable dma2 channel 3 (tim6up)
+			DMA1_Channel3->CCR |= DMA_CCR_EN;
+		}
 
 		// start conversion
 		ADC1->CR |= ADC_CR_ADSTART;
