@@ -262,9 +262,8 @@ void LLPD::adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample)
 	ADC12_COMMON->CCR |= ADC_CCR_CKMODE_0;
 #endif
 
-	// set adcs to combined simultaneous regular and injected mode
+	// set adcs to independent mode
 	ADC12_COMMON->CCR &= ~(ADC12_CCR_MULTI);
-	ADC12_COMMON->CCR |= ADC12_CCR_MULTI_0;
 
 	// setup voltage regulator
 	ADC1->CR &= ~(ADC_CR_ADVREGEN);
@@ -471,11 +470,12 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, ADC_CHANNE
 
 			if ( chanToDma != ADC_CHANNEL::CHAN_INVALID && dmaLoc != nullptr )
 			{
-				// disable channel 3 (tim6up)
+				// disable dma1 channel 3 (tim3 up)
 				DMA1_Channel3->CCR &= ~(DMA_CCR_EN);
 
 				// set peripheral address for the location of the stored channel value
 				DMA1_Channel3->CPAR = (uint32_t) &channelValues[ adcChannelOrderToValueIndex(chanToDma) ];
+				// DMA1_Channel3->CPAR = (uint32_t) &ADC2->DR;
 
 				// set the memory address for where the adc data will be stored
 				DMA1_Channel3->CMAR = (uint32_t) dmaLoc;
@@ -518,7 +518,7 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, ADC_CHANNE
 
 		if ( tim6Trig && chanToDma != ADC_CHANNEL::CHAN_INVALID && dmaLoc != nullptr )
 		{
-			// enable dma2 channel 3 (tim6up)
+			// enable dma1 channel 3 (tim3 up)
 			DMA1_Channel3->CCR |= DMA_CCR_EN;
 		}
 

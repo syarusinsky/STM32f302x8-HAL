@@ -287,6 +287,18 @@ class LLPD
 		static bool tim6_isr_handle_delay(); 	// To use delay functions, this function needs to be in the tim6 isr.
 							// It will return true if a delay is not finished, or false if it is.
 
+		// TIM3
+		static void tim3_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, uint32_t interruptRate);
+		static void tim3_counter_enable_interrupts();
+		static void tim3_counter_disable_interrupts();
+		static void tim3_counter_start();
+		static void tim3_counter_stop();
+		static void tim3_counter_clear_interrupt_flag();
+		static void tim3_delay (uint32_t microseconds); // delay function may not be 100% accurate
+		static bool tim3_isr_handle_delay(); 	// To use delay functions, this function needs to be in the tim6 isr.
+							// It will return true if a delay is not finished, or false if it is.
+		static void tim3_sync_to_tim6(); // syncs tim3's counter to tim6's counter (tim3 will actually lag behind a tiny bit)
+
 		// SPI spi2( nss = b12, sck = b13, miso = b14, mosi = b15 )
 		//     spi3( nss = a15, sck = b3,  miso = b4,  mosi = b5  )
 		static void spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
@@ -306,15 +318,18 @@ class LLPD
 
 		// DAC dac1( vout = a4 )
 		static void dac_init (bool useVoltageBuffer);
-		static void dac_send (uint16_t data);
+		static void dac_init_use_dma (bool useVoltageBuffer, uint16_t numSamples, uint16_t* buffer);
+		static void dac_send (uint16_t data); // don't use if using dma
+		static uint16_t dac_dma_get_num_transfers_left(); // returns the number of dma transfers left in the buffer
 
 		// ADC
 		// initialization requires PLL
 		// initialization needs to take place after counter is started for tim6, since it uses delay function
+		// dma'ing a single channel to a memory location will also require tim3 as a trigger
 		static void adc_init (const ADC_CYCLES_PER_SAMPLE& cyclesPerSample);
 		static void adc_set_channel_order (bool tim6Trig, // whether or not to trigger conversions by tim6
 							uint8_t numChannels,
-							ADC_CHANNEL chanToDma, // the channel you want to dma to dmaLoc, needs tim6Trig
+							ADC_CHANNEL chanToDma, // the channel you want to dma to dmaLoc, needs tim3Trig
 							uint32_t* dmaLoc, // the memory location you want to dma to, or nullptr if not desired
 							uint32_t dmaLocSize, // circular buffer size
 							const ADC_CHANNEL& channel...); // channels to convert given in order of conversion
