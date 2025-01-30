@@ -475,7 +475,6 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, ADC_CHANNE
 
 				// set peripheral address for the location of the stored channel value
 				DMA1_Channel3->CPAR = (uint32_t) &channelValues[ adcChannelOrderToValueIndex(chanToDma) ];
-				// DMA1_Channel3->CPAR = (uint32_t) &ADC2->DR;
 
 				// set the memory address for where the adc data will be stored
 				DMA1_Channel3->CMAR = (uint32_t) dmaLoc;
@@ -516,12 +515,6 @@ void LLPD::adc_set_channel_order (bool tim6Trig, uint8_t numChannels, ADC_CHANNE
 		// enable dma channel 1 (adc)
 		DMA1_Channel1->CCR |= DMA_CCR_EN;
 
-		if ( tim6Trig && chanToDma != ADC_CHANNEL::CHAN_INVALID && dmaLoc != nullptr )
-		{
-			// enable dma1 channel 3 (tim3 up)
-			DMA1_Channel3->CCR |= DMA_CCR_EN;
-		}
-
 		// start conversion
 		ADC1->CR |= ADC_CR_ADSTART;
 	}
@@ -550,4 +543,15 @@ uint16_t LLPD::adc_get_channel_value (const ADC_CHANNEL& channel)
 	}
 
 	return 65535;
+}
+
+void LLPD::adc_dma_start()
+{
+	// enable dma1 channel 3 (tim3 up)
+	DMA1_Channel3->CCR |= DMA_CCR_EN;
+}
+
+uint16_t LLPD::adc_dma_get_num_transfers_left()
+{
+	return DMA1_Channel3->CNDTR;
 }

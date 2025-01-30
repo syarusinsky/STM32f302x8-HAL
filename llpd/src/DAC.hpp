@@ -86,9 +86,6 @@ void LLPD::dac_init_use_dma (bool useVoltageBuffer, uint16_t numSamples, uint16_
 	DMA2_Channel3->CCR &= ~(DMA_CCR_PSIZE);
 	DMA2_Channel3->CCR |= DMA_CCR_PSIZE_0;
 
-	// enable stream
-	DMA2_Channel3->CCR |= DMA_CCR_EN;
-
 	// enable dac dma
 	DAC->CR |= DAC_CR_DMAEN1;
 
@@ -100,6 +97,12 @@ void LLPD::dac_send (uint16_t data)
 {
 	// put data in data register and ensure only 12 bits are used
 	DAC->DHR12R1 = (data & 0b0000111111111111);
+}
+
+void LLPD::dac_dma_start()
+{
+	// enable stream
+	DMA2_Channel3->CCR |= DMA_CCR_EN;
 }
 
 uint16_t LLPD::dac_dma_get_num_transfers_left()
