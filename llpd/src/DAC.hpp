@@ -8,6 +8,9 @@
 
 void LLPD::dac_init (bool useVoltageBuffer)
 {
+	// disable dac
+	DAC->CR &= ~(DAC_CR_EN1);
+
 	// enable clock to dac
 	RCC->APB1ENR |= RCC_APB1ENR_DAC1EN;
 
@@ -27,6 +30,9 @@ void LLPD::dac_init (bool useVoltageBuffer)
 
 void LLPD::dac_init_use_dma (bool useVoltageBuffer, uint16_t numSamples, uint16_t* buffer)
 {
+	// disable dac
+	DAC->CR &= ~(DAC_CR_EN1);
+
 	// enable clock to dac
 	RCC->APB1ENR |= RCC_APB1ENR_DAC1EN;
 
@@ -47,6 +53,7 @@ void LLPD::dac_init_use_dma (bool useVoltageBuffer, uint16_t numSamples, uint16_
 	}
 
 	// set up dma2 channel 3 (dac)
+
 	// enable dma2 clock
 	RCC->AHBENR |= RCC_AHBENR_DMA2EN;
 
@@ -103,6 +110,18 @@ void LLPD::dac_dma_start()
 {
 	// enable stream
 	DMA2_Channel3->CCR |= DMA_CCR_EN;
+}
+
+void LLPD::dac_dma_stop()
+{
+	// clear interrupt flags
+	DMA2->IFCR |= 0x0FFFFFFF;
+
+	// disable stream
+	DMA2_Channel3->CCR &= ~(DMA_CCR_EN);
+
+	// clear interrupt flags
+	DMA2->IFCR |= 0x0FFFFFFF;
 }
 
 uint16_t LLPD::dac_dma_get_num_transfers_left()

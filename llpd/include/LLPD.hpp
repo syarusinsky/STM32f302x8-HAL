@@ -321,6 +321,7 @@ class LLPD
 		static void dac_init_use_dma (bool useVoltageBuffer, uint16_t numSamples, uint16_t* buffer);
 		static void dac_send (uint16_t data); // don't use if using dma
 		static void dac_dma_start();
+		static void dac_dma_stop();
 		static uint16_t dac_dma_get_num_transfers_left(); // returns the number of dma transfers left in the buffer
 
 		// ADC
@@ -337,6 +338,7 @@ class LLPD
 		static void adc_perform_conversion_sequence(); // do not use if triggering conversions by tim6
 		static uint16_t adc_get_channel_value (const ADC_CHANNEL& channel); // 65535 is an invalid value for debugging
 		static void adc_dma_start(); // starts the dma transfers for chanToDma
+		static void adc_dma_stop(); // stops the dma transfers for chanToDma
 		static uint16_t adc_dma_get_num_transfers_left(); // returns the number of dma transfers left in the buffer for chanToDma
 
 		// USART usart1( tx = b6, rx = b7 )

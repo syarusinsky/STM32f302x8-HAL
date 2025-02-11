@@ -551,6 +551,21 @@ void LLPD::adc_dma_start()
 	DMA1_Channel3->CCR |= DMA_CCR_EN;
 }
 
+void LLPD::adc_dma_stop()
+{
+	// clear interrupt flags
+	DMA1->IFCR |= 0x0FFFFFFF;
+
+	// disable channel 1 (adc)
+	DMA1_Channel1->CCR &= ~(DMA_CCR_EN);
+
+	// disable dma1 channel 3 (tim3 up)
+	DMA1_Channel3->CCR &= ~(DMA_CCR_EN);
+
+	// clear interrupt flags
+	DMA1->IFCR |= 0x0FFFFFFF;
+}
+
 uint16_t LLPD::adc_dma_get_num_transfers_left()
 {
 	return DMA1_Channel3->CNDTR;

@@ -50,24 +50,24 @@ static void timerSetup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, 
 
 void LLPD::tim6_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, uint32_t interruptRate)
 {
-	// enable peripheral clock to TIM6
-	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
-
 	// reset registers
 	RCC->APB1RSTR |= (RCC_APB1RSTR_TIM6RST);
 	RCC->APB1RSTR &= ~(RCC_APB1RSTR_TIM6RST);
+
+	// enable peripheral clock to TIM6
+	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
 
 	timerSetup( prescalerDivisor, cyclesPerInterrupt, interruptRate, TIM6, tim6InterruptRate, tim6USecondIncr );
 }
 
 void LLPD::tim3_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, uint32_t interruptRate)
 {
-	// enable peripheral clock to TIM6
-	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-
 	// reset registers
 	RCC->APB1RSTR |= (RCC_APB1RSTR_TIM3RST);
 	RCC->APB1RSTR &= ~(RCC_APB1RSTR_TIM3RST);
+
+	// enable peripheral clock to TIM6
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
 	timerSetup( prescalerDivisor, cyclesPerInterrupt, interruptRate, TIM3, tim3InterruptRate, tim3USecondIncr );
 }
