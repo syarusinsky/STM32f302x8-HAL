@@ -69,6 +69,8 @@
 
 #include "stm32f3xx.h"
 
+extern void Custom_Reset_Handler();
+
 /**
   * @}
   */
@@ -160,6 +162,7 @@ void SystemInit(void)
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
+  Custom_Reset_Handler();
 }
 
 /**
