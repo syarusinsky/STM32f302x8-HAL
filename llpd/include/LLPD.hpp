@@ -300,11 +300,17 @@ class LLPD
 		static void tim3_sync_to_tim6(); // syncs tim3's counter to tim6's counter (tim3 will actually lag behind a tiny bit)
 
 		// SPI spi2( nss = b12, sck = b13, miso = b14, mosi = b15 )
-		//     spi3( nss = a15, sck = b3,  miso = b4,  mosi = b5  )
+		//     spi3( nss = a15, sck = b3,  miso = b4,  mosi = b5  ) // spi3 can't use dma
 		static void spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
 						const SPI_CLK_PHASE& phase, const SPI_DUPLEX& duplex,
-						const SPI_FRAME_FORMAT& frameFormat, const SPI_DATA_SIZE& dataSize);
+						const SPI_FRAME_FORMAT& frameFormat, const SPI_DATA_SIZE& dataSize,
+						const bool enableDmaChannels = false);
 		static uint16_t spi_master_send_and_recieve (const SPI_NUM& spiNum, uint8_t data);
+		static bool spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer,
+						unsigned int bufferSize); // returns false if failed
+		static void spi2_dma_wait_for_transfer_complete();
+		static void spi2_dma_stop();
+		static void spi2_look_at_registers();
 
 		// I2C i2c1( sda = b7,  scl = b6 )
 		//     i2c2( sda = a10, scl = a9 )

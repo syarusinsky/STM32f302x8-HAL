@@ -14,4 +14,74 @@ extern "C" void Custom_Reset_Handler(void)
 	// dma may still be running from the last reset
 	LLPD::adc_dma_stop();
 	LLPD::dac_dma_stop();
+	LLPD::spi2_dma_stop();
+}
+
+// spi2 rx dma
+extern "C" void DMA1_Channel4_IRQHandler (void)
+{
+	if ( DMA1->ISR & DMA_ISR_TEIF4 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTEIF4;
+	}
+
+	if ( DMA1->ISR & DMA_ISR_HTIF4 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CHTIF4;
+	}
+
+	if ( DMA1->ISR & DMA_ISR_TCIF4 )
+	{
+		while ( DMA1_Channel5->CCR & DMA_CCR_TCIE )
+		{
+			DMA1_Channel5->CCR &= ~(DMA_CCR_TCIE);
+		}
+
+		while ( DMA1_Channel5->CCR & DMA_CCR_TEIE )
+		{
+			DMA1_Channel5->CCR &= ~(DMA_CCR_TEIE);
+		}
+
+		while ( SPI2->CR2 & SPI_CR2_RXDMAEN )
+		{
+			SPI2->CR2 &= ~(SPI_CR2_RXDMAEN);
+		}
+
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTCIF4;
+	}
+}
+
+// spi2 tx dma
+extern "C" void DMA1_Channel5_IRQHandler (void)
+{
+	if ( DMA1->ISR & DMA_ISR_TEIF5 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTEIF5;
+	}
+
+	if ( DMA1->ISR & DMA_ISR_TCIF5 )
+	{
+		while ( DMA1_Channel5->CCR & DMA_CCR_TCIE )
+		{
+			DMA1_Channel5->CCR &= ~(DMA_CCR_TCIE);
+		}
+
+		while ( DMA1_Channel5->CCR & DMA_CCR_TEIE )
+		{
+			DMA1_Channel5->CCR &= ~(DMA_CCR_TEIE);
+		}
+
+		while ( SPI2->CR2 & SPI_CR2_TXDMAEN )
+		{
+			SPI2->CR2 &= ~(SPI_CR2_TXDMAEN);
+		}
+
+
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTCIF5;
+	}
 }

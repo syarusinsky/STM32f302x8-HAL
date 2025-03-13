@@ -8,7 +8,7 @@
 
 static void setup_spi_registers (SPI_TypeDef* spiPtr, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
 				const SPI_CLK_PHASE& phase, const SPI_DUPLEX& duplex, const SPI_FRAME_FORMAT& frameFormat,
-				const SPI_DATA_SIZE& dataSize, bool useNSS)
+				const SPI_DATA_SIZE& dataSize, bool useNSS, const bool enableDmaChannels)
 {
 	if ( spiPtr )
 	{
@@ -250,6 +250,103 @@ static void setup_spi_registers (SPI_TypeDef* spiPtr, const SPI_BAUD_RATE& baudR
 			spiPtr->CR2 |= SPI_CR2_FRXTH;
 		}
 
+		if ( spiPtr == SPI2 && enableDmaChannels )
+		{
+			// enable dma1 clock
+			RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+
+			// setup rx dma stream
+			// disable channel
+			DMA1_Channel4->CCR &= ~(DMA_CCR_EN);
+
+			// configure channel priority to low
+			DMA1_Channel4->CCR &= ~(DMA_CCR_PL);
+
+			// set data transfer direction from peripheral to memory
+			DMA1_Channel4->CCR &= DMA_CCR_DIR;
+
+			// ensure peripheral incrementing is off
+			DMA1_Channel4->CCR &= ~(DMA_CCR_PINC);
+
+			// enable memory incrementing
+			DMA1_Channel4->CCR |= DMA_CCR_MINC;
+
+			// ensure memory-to-memory mapping is disabled
+			DMA1_Channel4->CCR &= ~(DMA_CCR_MEM2MEM);
+
+			// ensure circular mode is off
+			DMA1_Channel4->CCR &= ~(DMA_CCR_CIRC);
+
+			// disable interrupts
+			DMA1_Channel4->CCR &= ~(DMA_CCR_TCIE | DMA_CCR_TEIE);
+			NVIC_SetPriority( DMA1_Channel4_IRQn, 0x00 );
+			NVIC_EnableIRQ( DMA1_Channel4_IRQn );
+
+			if ( dataSize == SPI_DATA_SIZE::BITS_16 )
+			{
+				// set the peripheral and memory data sizes to 16 bits
+				DMA1_Channel4->CCR &= ~(DMA_CCR_MSIZE);
+				DMA1_Channel4->CCR |= DMA_CCR_MSIZE_0;
+				DMA1_Channel4->CCR &= ~(DMA_CCR_PSIZE);
+				DMA1_Channel4->CCR |= DMA_CCR_PSIZE_0;
+			}
+			else
+			{
+				// set the peripheral and memory data sizes to 8 bits
+				DMA1_Channel4->CCR &= ~(DMA_CCR_MSIZE);
+				DMA1_Channel4->CCR &= ~(DMA_CCR_PSIZE);
+			}
+
+			// enable stream
+			DMA1_Channel4->CCR |= DMA_CCR_EN;
+			while ( DMA1_Channel4->CCR & DMA_CCR_EN != DMA_CCR_EN ) {}
+
+			// setup tx dma stream
+			// disable channel
+			DMA1_Channel5->CCR &= ~(DMA_CCR_EN);
+
+			// configure channel priority to low
+			DMA1_Channel5->CCR &= ~(DMA_CCR_PL);
+
+			// set data transfer direction from memory to peripheral
+			DMA1_Channel5->CCR |= DMA_CCR_DIR;
+
+			// ensure peripheral incrementing is off
+			DMA1_Channel5->CCR &= ~(DMA_CCR_PINC);
+
+			// enable memory incrementing
+			DMA1_Channel5->CCR |= DMA_CCR_MINC;
+
+			// ensure memory-to-memory mapping is disabled
+			DMA1_Channel5->CCR &= ~(DMA_CCR_MEM2MEM);
+
+			// ensure circular mode is off
+			DMA1_Channel5->CCR &= ~(DMA_CCR_CIRC);
+
+			// disable interrupts
+			DMA1_Channel5->CCR &= ~(DMA_CCR_TCIE | DMA_CCR_TEIE);
+			NVIC_SetPriority( DMA1_Channel5_IRQn, 0x00 );
+			NVIC_EnableIRQ( DMA1_Channel5_IRQn );
+
+			if ( dataSize == SPI_DATA_SIZE::BITS_16 )
+			{
+				// set the peripheral and memory data sizes to 16 bits
+				DMA1_Channel5->CCR &= ~(DMA_CCR_MSIZE);
+				DMA1_Channel5->CCR |= DMA_CCR_MSIZE_0;
+				DMA1_Channel5->CCR &= ~(DMA_CCR_PSIZE);
+				DMA1_Channel5->CCR |= DMA_CCR_PSIZE_0;
+			}
+			else
+			{
+				// set the peripheral and memory data sizes to 8 bits
+				DMA1_Channel5->CCR &= ~(DMA_CCR_MSIZE);
+				DMA1_Channel5->CCR &= ~(DMA_CCR_PSIZE);
+			}
+
+			// enable stream
+			DMA1_Channel5->CCR |= DMA_CCR_EN;
+		}
+
 		// lastly, enable SPI peripheral
 		spiPtr->CR1 |= SPI_CR1_SPE;
 	}
@@ -257,7 +354,7 @@ static void setup_spi_registers (SPI_TypeDef* spiPtr, const SPI_BAUD_RATE& baudR
 
 void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
 				const SPI_CLK_PHASE& phase, const SPI_DUPLEX& duplex, const SPI_FRAME_FORMAT& frameFormat,
-				const SPI_DATA_SIZE& dataSize)
+				const SPI_DATA_SIZE& dataSize, const bool enableDmaChannels)
 {
 	SPI_TypeDef* spiPtr = nullptr;
 
@@ -324,7 +421,7 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 		spiPtr = SPI3;
 	}
 
-	setup_spi_registers( spiPtr, baudRate, pol, phase, duplex, frameFormat, dataSize, false );
+	setup_spi_registers( spiPtr, baudRate, pol, phase, duplex, frameFormat, dataSize, false, enableDmaChannels );
 }
 
 uint16_t LLPD::spi_master_send_and_recieve (const SPI_NUM& spiNum, uint8_t data)
@@ -361,4 +458,111 @@ uint16_t LLPD::spi_master_send_and_recieve (const SPI_NUM& spiNum, uint8_t data)
 	}
 
 	return 0;
+}
+
+bool LLPD::spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer, unsigned int bufferSize)
+{
+	SPI_TypeDef* spiPtr = SPI2;
+
+	// spinlock until tx fifo is clear
+	while ( spiPtr->SR & SPI_SR_FTLVL ) {}
+
+	// spinlock until transmission complete
+	while ( spiPtr->SR & SPI_SR_BSY ) {}
+
+	// spinlock until rx fifo is clear
+	while ( spiPtr->SR & SPI_SR_FRLVL ) {}
+
+	// spinlock until ready to send
+	while ( !(spiPtr->SR & SPI_SR_TXE) ) {}
+
+	// configure dma
+	if ( (spiPtr != SPI1 && spiPtr != SPI3) && (txBuffer != nullptr) && (rxBuffer != nullptr) )
+	{
+		// setup the rx dma channel
+		// disable rx channel
+		DMA1_Channel4->CCR &= ~(DMA_CCR_EN);
+
+		// clear rx channel flags
+		DMA1->IFCR |= DMA_IFCR_CGIF4;
+
+		// configure number of data to be transferred
+		DMA1_Channel4->CNDTR = bufferSize;
+
+		// set peripheral address
+		DMA1_Channel4->CPAR = (uint32_t) &( SPI2->DR );
+
+		// set the memory address for where the spi data will be transfered to
+		DMA1_Channel4->CMAR = (uint32_t) rxBuffer;
+
+		// enable interrupts
+		DMA1_Channel4->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE | DMA_CCR_HTIE;
+
+		// enable stream
+		DMA1_Channel4->CCR |= DMA_CCR_EN;
+		while ( DMA1_Channel4->CCR & DMA_CCR_EN != DMA_CCR_EN ) {}
+
+		// enable the rx dma
+		spiPtr->CR2 |= SPI_CR2_RXDMAEN;
+
+		// setup tx dma stream
+		// disable tx channel
+		DMA1_Channel5->CCR &= ~(DMA_CCR_EN);
+
+		// clear tx channel flags
+		DMA1->IFCR |= DMA_IFCR_CGIF5;
+
+		// configure number of data to be transferred
+		DMA1_Channel5->CNDTR = bufferSize;
+
+		// set peripheral address
+		DMA1_Channel5->CPAR = (uint32_t) &( SPI2->DR );
+
+		// set the memory address for where the spi data will be transfered from
+		DMA1_Channel5->CMAR = (uint32_t) txBuffer;
+
+		// enable interrupts
+		DMA1_Channel5->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
+
+		// enable the tx dma channel to begin sending data
+		while ( !(DMA1_Channel5->CCR & DMA_CCR_EN) )
+		{
+			DMA1_Channel5->CCR |= DMA_CCR_EN;
+		}
+
+		// enable spi tx dma
+		spiPtr->CR2 |= SPI_CR2_TXDMAEN;
+
+		return true;
+	}
+
+	return false;
+}
+
+void LLPD::spi2_dma_wait_for_transfer_complete()
+{
+	// spinlock until tx fifo is clear
+	while ( SPI2->SR & SPI_SR_FTLVL ) {}
+
+	// spinlock until rx fifo is clear
+	while ( SPI2->SR & SPI_SR_FRLVL ) {}
+
+	// spinlock until transmission complete
+	while ( SPI2->SR & SPI_SR_BSY ) {}
+
+	// spinlock until ready to send
+	while ( !(SPI2->SR & SPI_SR_TXE) ) {}
+}
+
+void LLPD::spi2_dma_stop()
+{
+	// clear interrupt flags
+	DMA1->IFCR |= DMA_IFCR_CGIF4 | DMA_IFCR_CGIF5;
+
+	// disable stream
+	DMA1_Channel4->CCR &= ~(DMA_CCR_EN);
+	DMA1_Channel5->CCR &= ~(DMA_CCR_EN);
+
+	// clear interrupt flags
+	DMA1->IFCR |= DMA_IFCR_CGIF4 | DMA_IFCR_CGIF5;
 }
