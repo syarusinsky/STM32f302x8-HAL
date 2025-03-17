@@ -490,7 +490,7 @@ bool LLPD::spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer, unsigned int bu
 		DMA1_Channel4->CNDTR = bufferSize;
 
 		// set peripheral address
-		DMA1_Channel4->CPAR = (uint32_t) &( SPI2->DR );
+		DMA1_Channel4->CPAR = (uint32_t) &( spiPtr->DR );
 
 		// set the memory address for where the spi data will be transfered to
 		DMA1_Channel4->CMAR = (uint32_t) rxBuffer;
@@ -516,7 +516,7 @@ bool LLPD::spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer, unsigned int bu
 		DMA1_Channel5->CNDTR = bufferSize;
 
 		// set peripheral address
-		DMA1_Channel5->CPAR = (uint32_t) &( SPI2->DR );
+		DMA1_Channel5->CPAR = (uint32_t) &( spiPtr->DR );
 
 		// set the memory address for where the spi data will be transfered from
 		DMA1_Channel5->CMAR = (uint32_t) txBuffer;

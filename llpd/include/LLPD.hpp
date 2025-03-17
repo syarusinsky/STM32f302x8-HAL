@@ -2,6 +2,7 @@
 #define LLPD_H
 
 #include <stdint.h>
+#include <functional>
 
 enum class RCC_CLOCK_SOURCE
 {
@@ -301,6 +302,7 @@ class LLPD
 
 		// SPI spi2( nss = b12, sck = b13, miso = b14, mosi = b15 )
 		//     spi3( nss = a15, sck = b3,  miso = b4,  mosi = b5  ) // spi3 can't use dma
+		// set spi2_dma_tx/rx_tc_callback defined below to implement your callbacks upon transfer completion for dma
 		static void spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
 						const SPI_CLK_PHASE& phase, const SPI_DUPLEX& duplex,
 						const SPI_FRAME_FORMAT& frameFormat, const SPI_DATA_SIZE& dataSize,
@@ -311,6 +313,8 @@ class LLPD
 		static void spi2_dma_wait_for_transfer_complete();
 		static void spi2_dma_stop();
 		static void spi2_look_at_registers();
+		static std::function<void()> spi2_dma_tx_tc_callback; // set these to your own callbacks to implement
+		static std::function<void()> spi2_dma_rx_tc_callback;
 
 		// I2C i2c1( sda = b7,  scl = b6 )
 		//     i2c2( sda = a10, scl = a9 )

@@ -8,6 +8,9 @@
 #include "USART.hpp"
 #include "OpAmp.hpp"
 
+std::function<void()> LLPD::spi2_dma_tx_tc_callback = [](){};
+std::function<void()> LLPD::spi2_dma_rx_tc_callback = [](){};
+
 // this function is called in system_stm32f3xx.c and can be used to ensure certain things are done on reset
 extern "C" void Custom_Reset_Handler(void)
 {
@@ -51,6 +54,9 @@ extern "C" void DMA1_Channel4_IRQHandler (void)
 
 		// clear the flag
 		DMA1->IFCR |= DMA_IFCR_CTCIF4;
+
+		// call the user defined callback
+		LLPD::spi2_dma_rx_tc_callback();
 	}
 }
 
@@ -83,5 +89,8 @@ extern "C" void DMA1_Channel5_IRQHandler (void)
 
 		// clear the flag
 		DMA1->IFCR |= DMA_IFCR_CTCIF5;
+
+		// call the user defined callback
+		LLPD::spi2_dma_tx_tc_callback();
 	}
 }
