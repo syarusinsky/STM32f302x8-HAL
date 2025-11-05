@@ -111,6 +111,7 @@ enum class GPIO_PUPD
 
 enum class SPI_NUM
 {
+	SPI_1,
 	SPI_2,
 	SPI_3
 };
@@ -125,6 +126,7 @@ enum class SPI_BAUD_RATE
 	APB1CLK_DIV_BY_64,
 	APB1CLK_DIV_BY_128,
 	APB1CLK_DIV_BY_256,
+	SLAVE_INVALID
 };
 
 enum class SPI_CLK_POL
@@ -303,13 +305,22 @@ class LLPD
 		// SPI spi2( nss = b12, sck = b13, miso = b14, mosi = b15 )
 		//     spi3( nss = a15, sck = b3,  miso = b4,  mosi = b5  ) // spi3 can't use dma
 		// set spi2_dma_tx/rx_tc_callback defined below to implement your callbacks upon transfer completion for dma
+		//     spi1( nss = a4,  sck = a5,  miso = a6,  mosi = a7  ) // spi1 is only on spi_dac_adc board
 		static void spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate, const SPI_CLK_POL& pol,
 						const SPI_CLK_PHASE& phase, const SPI_DUPLEX& duplex,
 						const SPI_FRAME_FORMAT& frameFormat, const SPI_DATA_SIZE& dataSize,
 						const bool enableDmaChannels = false);
+		static bool spi1_dma_slave_init (const SPI_NUM& spiNum, const SPI_CLK_POL& pol, const SPI_CLK_PHASE& phase,
+						const SPI_DUPLEX& duplex, const SPI_FRAME_FORMAT& frameFormat,
+						const SPI_DATA_SIZE& dataSize, const bool enableDmaChannels = false); 	// only for use on
+															// spi_dac_adc
+															// board
+		static bool spi1_dma_slave_start (uint8_t* txBuffer, uint8_t* rxBuffer,
+							unsigned int bufferSize); // returns false if failed
 		static uint16_t spi_master_send_and_recieve (const SPI_NUM& spiNum, uint8_t data);
 		static bool spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer,
 						unsigned int bufferSize); // returns false if failed
+		static void spi1_dma_stop();
 		static void spi2_dma_wait_for_transfer_complete();
 		static void spi2_dma_stop();
 		static void spi2_look_at_registers();

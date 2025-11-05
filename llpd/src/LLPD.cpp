@@ -18,6 +18,7 @@ extern "C" void Custom_Reset_Handler(void)
 	LLPD::adc_dma_stop();
 	LLPD::dac_dma_stop();
 	LLPD::spi2_dma_stop();
+	LLPD::spi1_dma_stop();
 }
 
 // spi2 rx dma
@@ -92,5 +93,47 @@ extern "C" void DMA1_Channel5_IRQHandler (void)
 
 		// call the user defined callback
 		LLPD::spi2_dma_tx_tc_callback();
+	}
+}
+
+// spi1 rx dma
+extern "C" void DMA1_Channel2_IRQHandler (void)
+{
+	volatile uint32_t isrVal = DMA1->ISR;
+	DMA1->ISR = isrVal;
+	if ( DMA1->ISR & DMA_ISR_TEIF2 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTEIF2;
+	}
+
+	if ( DMA1->ISR & DMA_ISR_HTIF2 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CHTIF2;
+	}
+
+	if ( DMA1->ISR & DMA_ISR_TCIF2 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTCIF2;
+	}
+}
+
+// spi1 tx dma
+extern "C" void DMA1_Channel3_IRQHandler (void)
+{
+	volatile uint32_t isrVal = DMA1->ISR;
+	DMA1->ISR = isrVal;
+	if ( DMA1->ISR & DMA_ISR_TEIF3 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTEIF3;
+	}
+
+	if ( DMA1->ISR & DMA_ISR_TCIF3 )
+	{
+		// clear the flag
+		DMA1->IFCR |= DMA_IFCR_CTCIF3;
 	}
 }
