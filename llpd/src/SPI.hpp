@@ -576,7 +576,7 @@ bool LLPD::spi1_dma_slave_init (const SPI_NUM& spiNum, const SPI_CLK_POL& pol, c
 				| (afValue << (afPin7 * afWidth));
 
 		// spi1 nss
-		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_4, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_4, GPIO_PUPD::PULL_UP, GPIO_OUTPUT_TYPE::PUSH_PULL,
 					GPIO_OUTPUT_SPEED::HIGH, true );
 
 		// spi1 sck
@@ -610,7 +610,7 @@ bool LLPD::spi1_dma_slave_init (const SPI_NUM& spiNum, const SPI_CLK_POL& pol, c
 	return true;
 }
 
-bool LLPD::spi1_dma_slave_start (uint8_t* txBuffer, uint8_t* rxBuffer, unsigned int bufferSize)
+bool LLPD::spi1_dma_slave_start (void* txBuffer, void* rxBuffer, unsigned int bufferSize)
 {
 	SPI_TypeDef* spiPtr = SPI1;
 

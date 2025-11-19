@@ -315,7 +315,7 @@ class LLPD
 						const SPI_DATA_SIZE& dataSize, const bool enableDmaChannels = false); 	// only for use on
 															// spi_dac_adc
 															// board
-		static bool spi1_dma_slave_start (uint8_t* txBuffer, uint8_t* rxBuffer,
+		static bool spi1_dma_slave_start (void* txBuffer, void* rxBuffer,
 							unsigned int bufferSize); // returns false if failed
 		static uint16_t spi_master_send_and_recieve (const SPI_NUM& spiNum, uint8_t data);
 		static bool spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer,
