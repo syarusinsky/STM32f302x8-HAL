@@ -485,12 +485,45 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 {
 	SPI_TypeDef* spiPtr = nullptr;
 
-	// enable clock to gpio port B (which is what port spi pins use)
-	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 
 	// set up appropriate gpio
-	if ( spiNum == SPI_NUM::SPI_2 )
+	if ( spiNum == SPI_NUM::SPI_1 )
 	{
+		// enable clock to gpio port B (which is what port spi pins use)
+		RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+
+		// set alternate function registers to af5 for b13, b14, b15
+		constexpr int afValue = 5;
+		constexpr int afWidth = 4;
+		constexpr int afPin5 = 5;
+		constexpr int afPin6 = 6;
+		constexpr int afPin7 = 7;
+		GPIOA->AFR[0] |= (afValue << (afPin5 * afWidth))
+				| (afValue << (afPin6 * afWidth))
+				| (afValue << (afPin7 * afWidth));
+
+		// spi1 sck
+		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_5, GPIO_PUPD::PULL_DOWN, GPIO_OUTPUT_TYPE::PUSH_PULL,
+					GPIO_OUTPUT_SPEED::HIGH, true );
+
+		// spi1 miso
+		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_6, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
+					GPIO_OUTPUT_SPEED::HIGH, true );
+
+		// spi1 mosi
+		gpio_output_setup( GPIO_PORT::A, GPIO_PIN::PIN_7, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
+					GPIO_OUTPUT_SPEED::HIGH, true );
+
+		// set sck idle
+		gpio_output_set( GPIO_PORT::A, GPIO_PIN::PIN_5, (pol == SPI_CLK_POL::LOW_IDLE) ? false : true );
+
+		spiPtr = SPI1;
+	}
+	else if ( spiNum == SPI_NUM::SPI_2 )
+	{
+		// enable clock to gpio port B (which is what port spi pins use)
+		RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+
 		// set alternate function registers to af5 for b13, b14, b15
 		const int afValue = 5;
 		const int afWidth = 4;
@@ -520,6 +553,9 @@ void LLPD::spi_master_init (const SPI_NUM& spiNum, const SPI_BAUD_RATE& baudRate
 	}
 	else if ( spiNum == SPI_NUM::SPI_3 )
 	{
+		// enable clock to gpio port B (which is what port spi pins use)
+		RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+
 		// set alternate function registers to af6 for b3, b4, b5
 		const int afValue = 6;
 		const int afWidth = 4;
@@ -645,8 +681,8 @@ bool LLPD::spi1_dma_slave_start (void* txBuffer, void* rxBuffer, unsigned int bu
 		// set the memory address for where the spi data will be transfered to
 		DMA1_Channel2->CMAR = (uint32_t) rxBuffer;
 
-		// enable interrupts
-		DMA1_Channel2->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE | DMA_CCR_HTIE;
+		// disable interrupts
+		DMA1_Channel2->CCR &= ~(DMA_CCR_TCIE | DMA_CCR_TEIE | DMA_CCR_HTIE);
 
 		// enable stream
 		DMA1_Channel2->CCR |= DMA_CCR_EN;
@@ -674,8 +710,8 @@ bool LLPD::spi1_dma_slave_start (void* txBuffer, void* rxBuffer, unsigned int bu
 		// set the memory address for where the spi data will be transfered from
 		DMA1_Channel3->CMAR = (uint32_t) txBuffer;
 
-		// enable interrupts
-		DMA1_Channel3->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
+		// disable interrupts
+		DMA1_Channel3->CCR &= ~(DMA_CCR_TCIE | DMA_CCR_TEIE);
 
 		// enable the tx dma channel to begin sending data
 		while ( !(DMA1_Channel3->CCR & DMA_CCR_EN) )
@@ -739,6 +775,147 @@ uint16_t LLPD::spi_master_send_and_recieve (const SPI_NUM& spiNum, uint8_t data)
 	}
 
 	return 0;
+}
+
+bool LLPD::spi1_dma_master_start (uint16_t* buffer, unsigned int bufferSize)
+{
+	SPI_TypeDef* spiPtr = SPI1;
+
+	// spinlock until tx fifo is clear
+	while ( spiPtr->SR & SPI_SR_FTLVL ) {}
+
+	// spinlock until transmission complete
+	while ( spiPtr->SR & SPI_SR_BSY ) {}
+
+	// spinlock until rx fifo is clear
+	while ( spiPtr->SR & SPI_SR_FRLVL ) {}
+
+	// spinlock until ready to send
+	while ( !(spiPtr->SR & SPI_SR_TXE) ) {}
+
+	// configure dma
+	if ( (spiPtr != SPI2 && spiPtr != SPI3) && (buffer != nullptr) )
+	{
+		// enable dma1 clock
+		RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+
+		// disable dma1 channel 3 (tim3 up)
+		DMA1_Channel3->CCR &= ~(DMA_CCR_EN);
+		while ( DMA1_Channel3->CCR & DMA_CCR_EN ) {}
+
+		// clear tx channel flags
+		DMA1->IFCR |= DMA_IFCR_CGIF3;
+
+		// set peripheral address to data register
+		DMA1_Channel3->CPAR = (uint32_t) &( spiPtr->DR );
+
+		// set the memory address for where the data will be sent from
+		DMA1_Channel3->CMAR = (uint32_t) buffer;
+
+		// configure number of data to be transferred
+		DMA1_Channel3->CNDTR = bufferSize;
+
+		// configure channel priority to very high
+		DMA1_Channel3->CCR |= DMA_CCR_PL;
+
+		// set data transfer direction from memory to peripheral
+		DMA1_Channel3->CCR |= DMA_CCR_DIR;
+
+		// ensure peripheral incrementing is off
+		DMA1_Channel3->CCR &= ~(DMA_CCR_PINC);
+
+		// enable memory incrementing
+		DMA1_Channel3->CCR |= DMA_CCR_MINC;
+
+		// ensure memory-to-memory mapping is disabled
+		DMA1_Channel3->CCR &= ~(DMA_CCR_MEM2MEM);
+
+		// ensure circular mode is on
+		DMA1_Channel3->CCR |= DMA_CCR_CIRC;
+
+		// enable interrupts
+		DMA1_Channel3->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
+		NVIC_SetPriority( DMA1_Channel3_IRQn, 0x00 );
+		NVIC_EnableIRQ( DMA1_Channel3_IRQn );
+
+		// set the peripheral and memory data sizes to 16 bits
+		DMA1_Channel3->CCR &= ~(DMA_CCR_MSIZE);
+		DMA1_Channel3->CCR |= DMA_CCR_MSIZE_0;
+		DMA1_Channel3->CCR &= ~(DMA_CCR_PSIZE);
+		DMA1_Channel3->CCR |= DMA_CCR_PSIZE_0;
+
+		// setup the rx dma channel
+		// disable rx channel
+		DMA1_Channel2->CCR &= ~(DMA_CCR_EN);
+		while ( DMA1_Channel2->CCR & DMA_CCR_EN ) {}
+
+		// clear rx channel flags
+		DMA1->IFCR |= DMA_IFCR_CGIF2;
+
+		// configure number of data to be transferred
+		DMA1_Channel2->CNDTR = bufferSize;
+
+		// set peripheral address
+		DMA1_Channel2->CPAR = (uint32_t) &( spiPtr->DR );
+
+		// set the memory address for where the spi data will be transfered to
+		DMA1_Channel2->CMAR = (uint32_t) buffer;
+
+		// configure channel priority to very high
+		DMA1_Channel2->CCR |= DMA_CCR_PL;
+
+		// set data transfer direction from peripheral to memory
+		DMA1_Channel2->CCR &= ~(DMA_CCR_DIR);
+
+		// ensure peripheral incrementing is off
+		DMA1_Channel2->CCR &= ~(DMA_CCR_PINC);
+
+		// enable memory incrementing
+		DMA1_Channel2->CCR |= DMA_CCR_MINC;
+
+		// ensure memory-to-memory mapping is disabled
+		DMA1_Channel2->CCR &= ~(DMA_CCR_MEM2MEM);
+
+		// ensure circular mode is on
+		DMA1_Channel2->CCR |= DMA_CCR_CIRC;
+
+		// set the peripheral and memory data sizes to 16 bits
+		DMA1_Channel2->CCR &= ~(DMA_CCR_MSIZE);
+		DMA1_Channel2->CCR |= DMA_CCR_MSIZE_0;
+		DMA1_Channel2->CCR &= ~(DMA_CCR_PSIZE);
+		DMA1_Channel2->CCR |= DMA_CCR_PSIZE_0;
+
+		// enable interrupts
+		DMA1_Channel2->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE | DMA_CCR_HTIE;
+		NVIC_SetPriority( DMA1_Channel2_IRQn, 0x00 );
+		NVIC_EnableIRQ( DMA1_Channel2_IRQn );
+
+		// enable stream
+		DMA1_Channel2->CCR |= DMA_CCR_EN;
+		while ( !(DMA1_Channel2->CCR & DMA_CCR_EN) )
+		{
+			DMA1_Channel2->CCR |= DMA_CCR_EN;
+		}
+
+		// enable the rx dma
+		spiPtr->CR2 |= SPI_CR2_RXDMAEN;
+
+		// enable dma1 channel 3 (tim3 up)
+		DMA1_Channel3->CCR |= DMA_CCR_EN;
+		while ( !(DMA1_Channel3->CCR & DMA_CCR_EN) )
+		{
+			DMA1_Channel3->CCR |= DMA_CCR_EN;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+uint16_t LLPD::spi1_tx_dma_get_num_transfers_left()
+{
+	return DMA1_Channel3->CNDTR;
 }
 
 bool LLPD::spi2_dma_start (uint8_t* txBuffer, uint8_t* rxBuffer, unsigned int bufferSize)
