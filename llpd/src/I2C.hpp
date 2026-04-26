@@ -10,6 +10,9 @@
 
 static void setI2CRegisters (I2C_TypeDef* i2cPtr, uint32_t timingRegVal)
 {
+	// disable i2c peripheral
+	i2cPtr->CR1 &= ~(I2C_CR1_PE);
+
 	// set the i2c timing register
 	i2cPtr->TIMINGR = (uint32_t)timingRegVal;
 
@@ -21,6 +24,7 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 {
 	I2C_TypeDef* i2cPtr = nullptr;
 	uint32_t rccI2CEnableBits = 0;
+	uint32_t rccI2CResetBits = 0;
 
 	if ( i2cNum == I2C_NUM::I2C_1 )
 	{
@@ -29,8 +33,12 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 		RCC->CFGR3 |= RCC_CFGR3_I2C1SW_SYSCLK;
 
 		rccI2CEnableBits = RCC_APB1ENR_I2C1EN;
+		rccI2CResetBits = RCC_APB1RSTR_I2C1RST;
 
 		i2cPtr = I2C1;
+
+		// clear alternate function registers to af4 for b7 and b6
+		GPIOB->AFR[0] &= ~( (0b1111 << (7 * 4)) | (0b1111 << (6 * 4)) );
 
 		// set alternate function registers to af4 for b7 and b6
 		GPIOB->AFR[0] |= (4 << (7 * 4)) | (4 << (6 * 4));
@@ -50,8 +58,12 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 		RCC->CFGR3 |= RCC_CFGR3_I2C2SW_SYSCLK;
 
 		rccI2CEnableBits = RCC_APB1ENR_I2C2EN;
+		rccI2CResetBits = RCC_APB1RSTR_I2C2RST;
 
 		i2cPtr = I2C2;
+
+		// clear alternate function registers to af4 for a10 and a9
+		GPIOB->AFR[1] &= ~( (0b1111 << (1 * 4)) | (0b1111 << (2 * 4)) );
 
 		// set alternate function registers to af4 for a10 and a9
 		GPIOA->AFR[1] |= (4 << (1 * 4)) | (4 << (2 * 4));
@@ -72,8 +84,13 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 		RCC->CFGR3 |= RCC_CFGR3_I2C3SW_SYSCLK;
 
 		rccI2CEnableBits = RCC_APB1ENR_I2C3EN;
+		rccI2CResetBits = RCC_APB1RSTR_I2C3RST;
 
 		i2cPtr = I2C3;
+
+		// clear alternate function registers to af8 for b5 and af3 for a8
+		GPIOB->AFR[0] &= ~(0b1111 << (5 * 4));
+		GPIOA->AFR[1] &= ~(0b1111 << (0 * 4));
 
 		// set alternate function registers to af8 for b5 and af3 for a8
 		GPIOB->AFR[0] |= (8 << (5 * 4));
@@ -91,6 +108,10 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 
 	// enable i2c peripheral clock
 	RCC->APB1ENR |= rccI2CEnableBits;
+
+	// reset i2c peripheral
+	RCC->APB1RSTR |= rccI2CResetBits;
+	RCC->APB1RSTR &= ~(rccI2CResetBits);
 
 	setI2CRegisters( i2cPtr, timingRegVal );
 }
@@ -200,17 +221,14 @@ void LLPD::i2c_master_write (const I2C_NUM& i2cNum, bool setStopCondition, uint8
 	uint8_t data = bytes;
 	i2cPtr->TXDR = data;
 
-	// spinlock to ensure first transmission complete
-	while ( !(i2cPtr->ISR & I2C_ISR_TXE) ) {}
-
 	// subsequent transfers
 	for ( uint8_t byte = 1; byte < numBytes; byte++ )
 	{
+		// wait until ready for data
+		while ( !(i2cPtr->ISR & I2C_ISR_TXIS) ) {}
+
 		uint8_t data = static_cast<uint8_t>( va_arg(args, unsigned int) );
 		i2cPtr->TXDR = data;
-
-		// spinlock to ensure last transmission complete
-		while ( !(i2cPtr->ISR & I2C_ISR_TXE) ) {}
 	}
 
 	va_end( args );
