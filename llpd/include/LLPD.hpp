@@ -289,6 +289,7 @@ class LLPD
 		static void tim6_delay (uint32_t microseconds); // delay function may not be 100% accurate
 		static bool tim6_isr_handle_delay(); 	// To use delay functions, this function needs to be in the tim6 isr.
 							// It will return true if a delay is not finished, or false if it is.
+		static unsigned int tim6_get_elapsed_microseconds();
 
 		// TIM3
 		static void tim3_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, uint32_t interruptRate);

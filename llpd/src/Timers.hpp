@@ -12,17 +12,20 @@ static volatile float    tim6DelayVal = std::numeric_limits<float>::max(); // va
 static volatile uint32_t tim6InterruptRate = 0; 	// interrupt rate used for delay functions
 static volatile float    tim6USecondMax = 0.0f; 	// when tim6USecondIncr reaches this value, the delay is over
 static volatile float    tim6USecondIncr = 0.0f; 	// how much to increment per interrupt for microsecond delay
+static volatile float    tim6USecPerTick = 0.0f; 	// how many microseconds pass per counter increment
 static volatile float    tim3DelayVal = std::numeric_limits<float>::max(); // value for delay functions
 static volatile uint32_t tim3InterruptRate = 0; 	// interrupt rate used for delay functions
 static volatile float    tim3USecondMax = 0.0f; 	// when tim6USecondIncr reaches this value, the delay is over
 static volatile float    tim3USecondIncr = 0.0f; 	// how much to increment per interrupt for microsecond delay
+static volatile float    tim3USecPerTick = 0.0f; 	// how many microseconds pass per counter increment
 
 static void timerSetup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, uint32_t interruptRate, TIM_TypeDef* tim,
-			volatile uint32_t& timInterruptRate, volatile float& timUSecondIncr)
+			volatile uint32_t& timInterruptRate, volatile float& timUSecondIncr, volatile float& timUSecondPerTick)
 {
 	// store sample rate for delay functions
 	timInterruptRate = interruptRate;
 	timUSecondIncr = 1000000.0f / static_cast<float>( timInterruptRate );
+	timUSecondPerTick = timUSecondIncr / static_cast<float>( cyclesPerInterrupt );
 
 	// make sure timer is disabled during setup
 	tim->CR1 &= ~(TIM_CR1_CEN);
@@ -57,7 +60,7 @@ void LLPD::tim6_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInte
 	// enable peripheral clock to TIM6
 	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
 
-	timerSetup( prescalerDivisor, cyclesPerInterrupt, interruptRate, TIM6, tim6InterruptRate, tim6USecondIncr );
+	timerSetup( prescalerDivisor, cyclesPerInterrupt, interruptRate, TIM6, tim6InterruptRate, tim6USecondIncr, tim6USecPerTick );
 }
 
 void LLPD::tim3_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInterrupt, uint32_t interruptRate)
@@ -69,7 +72,7 @@ void LLPD::tim3_counter_setup (uint32_t prescalerDivisor, uint32_t cyclesPerInte
 	// enable peripheral clock to TIM6
 	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
-	timerSetup( prescalerDivisor, cyclesPerInterrupt, interruptRate, TIM3, tim3InterruptRate, tim3USecondIncr );
+	timerSetup( prescalerDivisor, cyclesPerInterrupt, interruptRate, TIM3, tim3InterruptRate, tim3USecondIncr, tim3USecPerTick );
 }
 
 static void timerEnableInterrupts (TIM_TypeDef* tim, IRQn_Type irqN)
@@ -201,4 +204,25 @@ bool LLPD::tim3_isr_handle_delay()
 void LLPD::tim3_sync_to_tim6()
 {
 	TIM3->CNT = TIM6->CNT;
+}
+
+unsigned int LLPD::tim6_get_elapsed_microseconds()
+{
+	static unsigned int prevCnt = 0;
+	const unsigned int currentCnt = TIM6->CNT;
+	unsigned int elapsedTicks = 0;
+
+	if ( currentCnt >= prevCnt )
+	{
+		elapsedTicks = currentCnt - prevCnt;
+	}
+	else
+	{
+		// counter overflowed
+		elapsedTicks = ( TIM6->ARR - prevCnt ) + currentCnt;
+	}
+
+	prevCnt = currentCnt;
+
+	return static_cast<float>( elapsedTicks ) * tim6USecPerTick;
 }
