@@ -63,7 +63,7 @@ void LLPD::i2c_master_setup (const I2C_NUM& i2cNum, uint32_t timingRegVal)
 		i2cPtr = I2C2;
 
 		// clear alternate function registers to af4 for a10 and a9
-		GPIOB->AFR[1] &= ~( (0b1111 << (1 * 4)) | (0b1111 << (2 * 4)) );
+		GPIOA->AFR[1] &= ~( (0b1111 << (1 * 4)) | (0b1111 << (2 * 4)) );
 
 		// set alternate function registers to af4 for a10 and a9
 		GPIOA->AFR[1] |= (4 << (1 * 4)) | (4 << (2 * 4));
