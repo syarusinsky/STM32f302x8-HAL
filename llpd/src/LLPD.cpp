@@ -8,6 +8,7 @@
 #include "USART.hpp"
 #include "OpAmp.hpp"
 
+std::function<void()> LLPD::spi1_dma_rx_tc_callback = [](){};
 std::function<void()> LLPD::spi2_dma_tx_tc_callback = [](){};
 std::function<void()> LLPD::spi2_dma_rx_tc_callback = [](){};
 
@@ -117,6 +118,9 @@ extern "C" void DMA1_Channel2_IRQHandler (void)
 	{
 		// clear the flag
 		DMA1->IFCR |= DMA_IFCR_CTCIF2;
+
+		// call the user defined callback
+		LLPD::spi1_dma_rx_tc_callback();
 	}
 }
 

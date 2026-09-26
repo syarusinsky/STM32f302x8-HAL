@@ -681,8 +681,8 @@ bool LLPD::spi1_dma_slave_start (void* txBuffer, void* rxBuffer, unsigned int bu
 		// set the memory address for where the spi data will be transfered to
 		DMA1_Channel2->CMAR = (uint32_t) rxBuffer;
 
-		// disable interrupts
-		DMA1_Channel2->CCR &= ~(DMA_CCR_TCIE | DMA_CCR_TEIE | DMA_CCR_HTIE);
+		// enable interrupts
+		DMA1_Channel2->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE | DMA_CCR_HTIE;
 
 		// enable stream
 		DMA1_Channel2->CCR |= DMA_CCR_EN;
@@ -710,8 +710,8 @@ bool LLPD::spi1_dma_slave_start (void* txBuffer, void* rxBuffer, unsigned int bu
 		// set the memory address for where the spi data will be transfered from
 		DMA1_Channel3->CMAR = (uint32_t) txBuffer;
 
-		// disable interrupts
-		DMA1_Channel3->CCR &= ~(DMA_CCR_TCIE | DMA_CCR_TEIE);
+		// enable interrupts
+		DMA1_Channel3->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
 
 		// enable the tx dma channel to begin sending data
 		while ( !(DMA1_Channel3->CCR & DMA_CCR_EN) )

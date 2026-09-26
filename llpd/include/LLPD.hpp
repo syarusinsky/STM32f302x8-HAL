@@ -329,6 +329,7 @@ class LLPD
 		static void spi2_dma_wait_for_transfer_complete();
 		static void spi2_dma_stop();
 		static void spi2_look_at_registers();
+		static std::function<void()> spi1_dma_rx_tc_callback;
 		static std::function<void()> spi2_dma_tx_tc_callback; // set these to your own callbacks to implement
 		static std::function<void()> spi2_dma_rx_tc_callback;
 
